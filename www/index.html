@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family Campus</title>
+<meta name="description" content="Family Campus – exercises for the whole family">
+<link rel="icon" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="i18n.js"></script>
+<script src="subjects.js"></script>
+<script src="people.js"></script>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#6b4eff">
+<style>
+:root{
+  --bg:#f6f4ff; --card:#ffffff; --ink:#26233a; --muted:#6c6886; --line:#e4e0f5;
+  --chip:#efeafe; --chip-ink:#3d2fa0; --accent:#6b4eff; --radius:18px;
+  --shadow:0 2px 0 var(--line),0 6px 22px rgba(60,40,140,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#16141f; --card:#211e2e; --ink:#ece9f7; --muted:#a39fbb; --line:#332f45;
+    --chip:#2e2945; --chip-ink:#c9bfff; --accent:#8b72ff;
+    --shadow:0 2px 0 var(--line),0 6px 22px rgba(0,0,0,.25);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px;line-height:1.45}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+/* header grid: logo | title | account on the first row; subtitle and version may use the width under the account */
+header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"logo title user" "logo sub sub" "logo ver ver";column-gap:14px;align-items:start;margin:8px 0 18px}
+header > svg{grid-area:logo;align-self:start}   /* logo stays top left */
+header .brand{display:contents}
+header h1{grid-area:title;align-self:center}
+header .brand > p:not(.app-version){grid-area:sub}
+header .app-version{grid-area:ver}
+header .user{grid-area:user;align-self:center}
+header svg{flex:none}
+@media (max-width:600px){
+  header{column-gap:10px}
+  header svg{width:42px;height:42px}
+  header h1{font-size:clamp(1.05rem, 5vw, 1.35rem)}   /* "header h1" beats the later global h1 rule */
+  .account > summary{font-size:.8rem;padding:5px 10px}
+  header p{font-size:.85rem}
+}
+h1{font-size:1.7rem;margin:0;line-height:1.15}
+header p{margin:2px 0 0;color:var(--muted)}
+header .app-version{font-size:.78rem;margin-top:4px;min-height:1em}
+
+/* filters: a card like "Nächste Prüfungen" and "Fokus", grey top edge (controls, not content);
+   the summary line is its heading; same arrow as the other cards (› folded, ⌄ open) */
+.filters{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;margin:0 0 16px;border-top:3px solid #868e96}
+.filters > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;border-radius:10px}
+.filters > summary::-webkit-details-marker{display:none}
+.filters > summary::after{content:"";flex:none;width:.6em;height:.6em;border-right:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(45deg);margin:0 6px 4px auto;opacity:.6;transition:transform .15s}
+.filters:not([open]) > summary::after{transform:rotate(-45deg);margin-bottom:0}
+.filters > summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+@media (prefers-reduced-motion: reduce){.filters > summary::after{transition:none}}
+.filter-sum{font-size:1rem;font-weight:650;line-height:1.3;min-width:0}   /* same size as the section headings */
+.filter-body{display:grid;gap:10px;margin-top:14px}
+.filter-reset{font:inherit;font-size:.85rem;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:99px;padding:5px 12px;cursor:pointer}
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-inline-start:calc(4rem + 8px)}
+.filter-row > span{font-size:.85rem;color:var(--muted);flex:0 0 4rem;margin-inline-start:calc(-4rem - 8px)}
+.filter-row[hidden]{display:none}
+/* phones: the label above its chips (full width for the chips), smaller chips */
+@media (max-width:600px){
+  .filter-body{gap:8px;margin-top:10px}
+  .filter-row{padding-inline-start:0;gap:6px}
+  .filter-row > span{flex:0 0 100%;margin:0 0 -2px;font-size:.78rem;font-weight:600;letter-spacing:.02em}
+  .filter-row > span:empty{display:none}
+  .filter-row .chip{font-size:.88rem;padding:4px 11px;min-height:34px}
+}
+.chip{font:inherit;font-size:.92rem;border:2px solid transparent;border-radius:99px;padding:6px 14px;cursor:pointer;background:var(--chip);color:var(--chip-ink);min-height:40px}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff}
+.chip.person-chip{background:color-mix(in srgb, var(--c) 14%, var(--card));color:var(--c);font-weight:700}   /* name in the full person colour, as everywhere */
+.chip.person-chip[aria-pressed="true"]{background:var(--c);color:var(--c-text)}
+.chip.person-chip:hover{border-color:var(--c)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.tile{display:flex;flex-direction:column;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;text-decoration:none;color:inherit;transition:transform .12s, box-shadow .12s}
+.tile:hover{transform:translateY(-3px)}
+.tile:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.cover{aspect-ratio:16/10;background:var(--chip);display:grid;place-items:center;overflow:hidden}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .fallback{font-size:3.4rem;font-weight:800;color:#fff;width:100%;height:100%;display:grid;place-items:center}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.body h2{font-size:1.12rem;margin:0;line-height:1.25}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.88rem;color:var(--muted)}
+.level{font-size:.8rem;font-weight:700;color:#fff;background:var(--c);border-radius:99px;padding:2px 10px}
+.meta .exam-date{color:#d9480f;font-weight:700}
+.desc{font-size:.92rem;color:var(--muted);margin:0}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:4px}
+.tag{font-size:.78rem;padding:2px 9px;border-radius:99px;background:var(--chip);color:var(--chip-ink)}
+.tag.subject{font-weight:700}
+.empty{color:var(--muted);text-align:center;padding:40px 0}
+.user{margin-inline-start:auto;display:flex;gap:6px;align-items:center;font-size:.92rem;flex:none}
+.user a,.user button{font:inherit;font-size:.88rem;border:none;background:var(--chip);color:var(--chip-ink);border-radius:99px;padding:6px 12px;text-decoration:none;cursor:pointer}
+.status{display:grid;gap:5px;font-size:.84rem}
+.status .line{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.status .new{font-weight:700;color:var(--accent)}
+.status .ok{font-weight:700;color:var(--c)}
+.bar{height:7px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c)}
+.due{display:inline-block;font-size:.8rem;font-weight:700;background:#fff3bf;color:#8a5a00;border-radius:99px;padding:2px 9px}
+/* cards: neutral grey top edge for everybody – colour stands only for names (chips, account button, names in lists) */
+.panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;margin:0 0 16px;border-top:3px solid #868e96}
+.panel h2{font-size:1rem;font-weight:650;line-height:1.3;margin:0 0 4px}
+.panel h3{font-size:1rem;margin:16px 0 8px;color:var(--muted)}
+.panel ol,.panel ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.panel li a{display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit;background:var(--bg);border:2px solid transparent;border-radius:14px;padding:10px 12px}
+.panel li a:hover{border-color:var(--accent)}
+.panel li.next a{border-color:var(--accent);background:var(--chip)}
+.panel .nr{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800}
+.panel .date-box{flex:none;width:58px;text-align:center;font-size:.8rem;line-height:1.15;color:var(--chip-ink)}
+.panel .date-box b{display:block;font-size:1.15rem}
+.panel .txt{flex:1;min-width:0}
+.panel .txt b{display:block}
+.panel .txt small{color:var(--muted)}
+.panel .st{flex:none;font-size:.82rem;font-weight:700;text-align:end}
+.panel .next-badge{display:inline-block;font-size:.75rem;font-weight:800;color:#fff;background:var(--accent);border-radius:99px;padding:1px 8px;margin-left:6px}
+.panel .soon{color:#d9480f;font-weight:700}
+.panel .who{color:var(--muted);font-weight:600}
+.account{position:relative}
+.account > summary{list-style:none;cursor:pointer;font-size:.88rem;font-weight:700;background:color-mix(in srgb, var(--c, var(--accent)) 14%, var(--card));color:var(--c, var(--chip-ink));   /* same as the person chips */border-radius:99px;padding:6px 12px;display:flex;align-items:center;gap:6px}
+.account > summary::-webkit-details-marker{display:none}
+.account > summary::after{content:"";width:.4em;height:.4em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 2px 3px 2px}
+.account[open] > summary::after{transform:rotate(-135deg);margin-bottom:-2px}
+.account > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.account-menu{position:absolute;inset-inline-end:0;top:calc(100% + 6px);z-index:20;min-width:200px;background:var(--card);color:var(--ink);border:1px solid var(--line, #e4e0f5);border-radius:14px;box-shadow:var(--shadow);padding:12px;display:grid;gap:10px}
+.account-menu p{margin:0;font-size:.88rem;color:var(--muted)}
+.account-menu p b{color:var(--ink)}
+.lang-badge{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.04em;padding:1px 6px;border-radius:6px;border:1px solid var(--line);color:var(--muted);margin-inline-start:6px;vertical-align:2px}
+.account-menu .lang{display:flex;flex-direction:column;gap:4px}
+.account-menu .lang select{font:inherit;font-size:.9rem;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-height:40px;cursor:pointer}
+.account-menu .menu-item{font:inherit;font-size:.92rem;text-align:start;border:0;background:var(--chip);color:var(--chip-ink);border-radius:10px;padding:8px 12px;text-decoration:none;cursor:pointer}
+.person{white-space:nowrap;color:var(--c);font-weight:700}
+.who .person+.person{margin-inline-start:6px}
+.panel li.later{opacity:.75}
+.panel .exam{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border-radius:14px;padding:10px 12px}
+.panel .ex-tiles{display:grid;gap:4px;margin:6px 0 0}
+.panel .ex-tiles li a{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--card);padding:6px 10px;border-radius:10px}
+.panel .ex-tiles .t{min-width:0}
+.panel .ex-tiles .sts{display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:flex-end}
+.panel .no-tile{display:block;margin-top:6px;color:var(--muted);font-style:italic}
+.panel details.goals{margin:8px 0 0;font-size:.9rem}
+.panel details.goals summary{cursor:pointer;color:var(--chip-ink);font-weight:700;padding:4px 0}
+.panel details.goals ul{display:block;list-style:disc;padding-inline-start:1.2rem;margin:4px 0 8px}
+.panel details.goals li{margin:3px 0}
+
+.repeat{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;margin:0 0 16px;border-top:3px solid #868e96}
+.repeat h2{font-size:1rem;font-weight:650;line-height:1.3;margin:0}   /* same as .panel h2 */
+details.fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;border-radius:10px}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary > h2{flex:1;margin:0}
+details.fold > summary::after{content:"";flex:none;width:.6em;height:.6em;border-right:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(45deg);margin:0 6px 4px;opacity:.6;transition:transform .15s}
+details.fold:not([open]) > summary::after{transform:rotate(-45deg);margin-bottom:0}
+details.fold > summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+details.fold > .fold-body{margin-top:8px}
+@media (prefers-reduced-motion: reduce){details.fold > summary::after{transition:none}}
+.repeat .due-item{display:inline-block;margin-block:4px;margin-inline:0 6px;padding:6px 12px;border-radius:99px;background:transparent;color:var(--chip-ink);font-weight:600;border:1px dashed var(--line)}
+.repeat a{display:inline-block;margin-block:4px;margin-inline:0 6px;padding:6px 12px;border-radius:99px;background:var(--chip);color:var(--chip-ink);font-weight:600;text-decoration:none}
+@media (prefers-color-scheme: dark){.due{background:#3a2f0b;color:#ffd43b}}
+
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <svg width="52" height="52" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#6b4eff"/><g fill="#fff"><circle cx="19" cy="22" r="6.5"/><circle cx="45" cy="22" r="6.5"/><circle cx="32" cy="27" r="5.5"/><path d="M8 40a11 10 0 0 1 22 0zM34 40a11 10 0 0 1 22 0zM23 41a9 8 0 0 1 18 0z" opacity=".8"/></g><path d="M8 41q12-5 24 1q12-6 24-1v12q-12-5-24 1q-12-6-24-1z" fill="#fff" stroke="#6b4eff" stroke-width="3" stroke-linejoin="round"/><path d="M32 42v12" stroke="#6b4eff" stroke-width="2.5"/></svg>
+    <div class="brand">
+      <h1>Family Campus</h1>
+      <p data-i18n="app.tagline"></p>
+      <p class="app-version" id="app-version"></p>
+    </div>
+    <div class="user" id="user"></div>
+  </header>
+
+  <details class="filters" id="filters" data-i18n-attr="aria-label:filter.title">
+    <summary><span class="filter-sum" id="filter-sum">🔎 Filter</span></summary>
+    <div class="filter-body">
+      <div class="filter-row" id="f-person"><span data-i18n="filter.for"></span></div>
+      <div class="filter-row" id="f-cat" hidden><span data-i18n="filter.category"></span></div>
+      <div class="filter-row" id="f-area" hidden><span data-i18n="filter.area"></span></div>
+      <div class="filter-row" id="f-level"><span data-i18n="filter.level"></span></div>
+      <div class="filter-row" id="f-subject"><span data-i18n="filter.subject"></span></div>
+      <div class="filter-row"><span></span><button type="button" class="filter-reset" id="filter-reset" data-i18n="filter.reset"></button></div>
+    </div>
+  </details>
+
+  <section class="panel exams" id="exams" aria-live="polite" hidden></section>
+  <section class="repeat" id="repeat" hidden></section>
+  <section class="panel focus" id="focus" hidden></section>
+  <div id="list" aria-live="polite"></div>
+  <p class="empty" id="empty" hidden></p>
+
+</main>
+
+<script>
+(async function () {
+  await I18n.ready;
+  const t = I18n.t;
+  const list = document.getElementById("list");
+  const empty = document.getElementById("empty");
+  let data, me, summary;
+  try {
+    const [r1, r2, r3] = await Promise.all([fetch("exercises.json", { cache: "no-cache" }), fetch("api/me"), fetch("api/summary")]);
+    if (r2.status === 401 || r3.status === 401) { location.href = "login.html"; return; }
+    [data, me, summary] = await Promise.all([r1.json(), r2.json(), r3.json()]);
+  } catch (e) {
+    empty.textContent = t("home.loadFailed");
+    empty.hidden = false;
+    return;
+  }
+
+  const people = data.people || {};
+  // Categories (Volksschule, Berufsbildung, Studium, Weiterbildung, Allgemeinwissen) hold areas
+  // (e.g. one profession) with ordered levels; areas without levels have none. "forAll" areas are for everybody.
+  // names are plain strings or per locale ({"en": …, "de": …}); levels are {id, name} (plain strings also work)
+  const lvlId = l => l && typeof l === "object" ? l.id : l;
+  const areaList = (data.categories || []).flatMap(c => (c.areas || []).map(a => ({ ...a, category: c.id, levels: (a.levels || []).map(lvlId),
+    levelNames: Object.fromEntries((a.levels || []).map(l => [lvlId(l), I18n.name(l && typeof l === "object" ? l.name : l)])) })));
+  const catName = id => I18n.name(((data.categories || []).find(c => c.id === id) || {}).name) || id;
+  const areaName = id => I18n.name((areaById[id] || {}).name) || id;
+  const areaShort = id => I18n.name((areaById[id] || {}).short) || areaName(id);
+  const levelName = (areaId, lvl) => ((areaById[areaId] || {}).levelNames || {})[lvl] || lvl;
+  const areaById = Object.fromEntries(areaList.map(a => [a.id, a]));
+  const areaOfEx = ex => ex.area;
+  const isForAll = id => !!(areaById[id] && areaById[id].forAll);
+  const categories = (data.categories || []).filter(c => (c.areas || []).length);   // Studium appears once it has an area
+  const catOf = id => (areaById[id] || {}).category || null;
+  const areasOfCat = cat => areaList.filter(a => a.category === cat).map(a => a.id);
+  const levelIndexIn = (id, lvl) => ((areaById[id] || {}).levels || []).indexOf(lvl);
+  // badge text: the level alone in an area marked "levelOnly" (school: "Sek 1"), "Carpenter · 1st year" in areas with a
+  // short name, the area name for areas without levels
+  const levelLabel = ex => { const a = areaById[areaOfEx(ex)] || {};
+    return !ex.level ? (a.name ? areaName(a.id) : t("home.forAll")) : !a.short ? levelName(a.id, ex.level) : `${areaShort(a.id)} · ${levelName(a.id, ex.level)}`; };
+  const exercises = (data.exercises || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+  const personColor = n => CampusPeople.color(n);   // colours live in people.js (public, also used by the login page)
+  // a name written in the person's colour (the same colours as the "Für" chips, from people.js)
+  const personTag = n => { const t = el("span", { class: "person" }, n); t.style.setProperty("--c", personColor(n)); return t; };
+  // levels are neutral grey everywhere: colour stands for people only (dots in "Für", names for parents)
+  const levelColor = () => "#5c5f6e";
+  const FILTER_KEY = "campus-filter-" + me.name;
+  const own = people[me.name];
+  // parents start with "Für: Alle" (they look after everybody); learners with themselves and their level
+  // areas marked "levelOnly" (school): start on exactly the own level (e.g. Sek 1); other areas: no level chosen,
+  // the person sees everything up to their level ("up to year 2" – e.g. for a shortened apprenticeship)
+  const exactLevel = (pp, areaId) => pp && (areaById[areaId] || {}).levelOnly && pp.area === areaId ? pp.level || null : null;
+  const startState = () => me.admin ? { person: null, cat: null, area: null, level: null, subject: null }
+    : { person: own ? me.name : null, cat: own && catOf(own.area), area: own && own.area || null, level: exactLevel(own, own && own.area), subject: null };
+  const state = startState();
+  try { Object.assign(state, JSON.parse(localStorage.getItem(FILTER_KEY) || "{}")); } catch (e) {}
+  if (state.level && !state.area) state.area = (areaList.find(a => (a.levels || []).includes(state.level)) || {}).id || null;   // older stored filters
+  if (state.area && !state.cat) state.cat = catOf(state.area);
+
+  function el(tag, attrs, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === "style") n.style.cssText = v; else n.setAttribute(k, v);
+    }
+    for (const k of kids) if (k != null) n.append(k);
+    return n;
+  }
+  const save = () => { try { localStorage.setItem(FILTER_KEY, JSON.stringify(state)); } catch (e) {} };
+  const defaults = startState;
+  // "Nächste Prüfungen" and "Repetieren" can be folded; this browser remembers it (campus-folded)
+  const FOLD_KEY = "campus-folded";
+  let folded = {};
+  try { folded = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}"); } catch (e) {}
+  // filters: one summary line; folded by default on phones, open on wide screens, remembered per browser
+  const filtersBox = document.getElementById("filters");
+  // start state: wide screens open everything, phones fold the filters (see also foldable());
+  // folding by hand works everywhere and is remembered
+  const WIDE = window.matchMedia("(min-width: 700px)");
+  filtersBox.open = "filters" in folded ? !folded.filters : WIDE.matches;
+  // remember only what the viewer did (a tap or Enter on the heading), never the automatic default:
+  // "toggle" also fires when the page itself opens a section
+  function rememberFold(summary, d, key) {
+    summary.addEventListener("click", () => setTimeout(() => {
+      folded[key] = !d.open; try { localStorage.setItem(FOLD_KEY, JSON.stringify(folded)); } catch (e) {}
+    }));
+  }
+  rememberFold(filtersBox.querySelector("summary"), filtersBox, "filters");
+  function renderFilterSummary() {
+    const sum = document.getElementById("filter-sum");
+    const who = state.person || t("filter.forAll");   // a name or "For everyone"
+    const ppArea = state.person && people[state.person] && people[state.person].area;
+    const ar = areaById[state.area || (state.person ? ppArea : null)];   // a person's area is named even without tiles yet
+    const pp = state.person && people[state.person];
+    const upTo = !state.level && pp && pp.area === state.area && pp.level ? t("filter.upTo", { level: levelName(pp.area, pp.level) }) : null;
+    const where = ar ? [ar.levelOnly && !ar.short ? null : areaName(ar.id), (state.level && levelName(ar.id, state.level)) || upTo || ((ar.levels || []).length ? t("filter.allLevels") : null)].filter(Boolean).join(" · ")
+      : state.cat ? catName(state.cat) : t("filter.allCategories");
+    sum.replaceChildren("🔎 ", who, " · ", where, " · ",
+      state.subject ? subjectWithIcon(state.subject) : t("filter.allSubjects"));
+  }
+  // On phones only one section starts open: the first that has content of exams → repeat → focus
+  // (set in render()). A section the viewer folded or unfolded keeps that choice; wide screens open all.
+  const wide = () => WIDE.matches;
+  let firstOpen = null;
+  function foldable(key, [heading, ...content]) {
+    const d = el("details", { class: "fold" });
+    d.open = key in folded ? !folded[key] : (wide() || key === firstOpen);
+    const summary = el("summary", null, heading);
+    d.append(summary, el("div", { class: "fold-body" }, ...content));
+    rememberFold(summary, d, key);
+    return d;
+  }
+
+  // logged-in person, progress page, logout
+  // account menu: "👤 name ▾" opens role and "Abmelden" (logging out needs a second, deliberate tap)
+  const logout = el("button", { type: "button", class: "logout menu-item" }, "🚪 " + t("account.logout"));
+  logout.addEventListener("click", async () => { await fetch("api/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }); location.href = "login.html"; });
+  const account = el("details", { class: "account" },
+    CampusPeople.paint(el("summary", { "aria-label": t("account.of", { name: me.name }) }, me.name), me.name),
+    el("div", { class: "account-menu" },
+      el("p", null, t("account.role"), " ", el("b", null, me.admin ? t("account.parent") : t("account.learner"))),
+      // language of this person (stored on the server), below the role: a dropdown, only when my-family offers more than one
+      I18n.locales.length > 1 ? (() => {
+        const sel = el("select", { "aria-label": t("account.language") }, ...I18n.locales.map(tag => { const o = el("option", { value: tag, lang: tag }, I18n.nameOf(tag)); o.selected = tag === I18n.locale; return o; }));
+        sel.addEventListener("change", () => I18n.setLocale(sel.value));
+        return el("div", { class: "lang" }, sel);
+      })() : null,
+      el("a", { href: "progress.html", class: "menu-item" }, "📊 " + t("account.progress")),
+      logout));
+  document.addEventListener("click", e => { if (account.open && !account.contains(e.target)) account.open = false; });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && account.open) { account.open = false; account.querySelector("summary").focus(); } });
+  document.getElementById("user").append(account);   // top right: only the account button
+
+  // repetition: questions due in the Lernkartei.
+  // Learners (and parents for themselves) see their own with links. Parents can look at a selected
+  // person's due questions (read-only: answers are always stored for the logged-in person) or, with
+  // "Alle", at an overview of everybody.
+  const repeatBox = document.getElementById("repeat");
+  const dueOf = sum => Object.entries(sum.due || {}).filter(([, n]) => n > 0);
+  const totalOf = list => list.reduce((a, [, n]) => a + n, 0);
+  const fragen = n => t("repeat.due", { count: n });
+  const summaries = { [me.name]: summary };
+  const summaryOf = name => summaries[name] ||= fetch("api/summary?user=" + encodeURIComponent(name)).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  let repeatToken = 0;
+  async function renderRepeat() {
+    const token = ++repeatToken;
+    const target = !me.admin || state.person === me.name ? me.name : state.person;   // null = parents with "Alle"
+    let parts = [];
+    if (target === me.name) {
+      const list = dueOf(summary);
+      if (list.length) parts = [el("h2", null, "🔁 " + t("repeat.titleFor", { name: me.name }) + ": " + fragen(totalOf(list))),
+        el("p", { class: "small", style: "margin:0 0 6px" }, t("repeat.explain")),
+        ...list.map(([id, n]) => { const ex = exercises.find(x => x.id === id); return ex ? el("a", { href: ex.path + "#repeat" }, `${ex.title} (${n})`) : null; })];
+    } else if (target) {
+      const list = dueOf(await summaryOf(target));
+      if (list.length) parts = [el("h2", null, "🔁 " + t("repeat.titleFor", { name: target }) + ": " + fragen(totalOf(list))),
+        el("p", { class: "small", style: "margin:0 0 6px" }, t("repeat.viewOnly", { name: target })),
+        ...list.map(([id, n]) => { const ex = exercises.find(x => x.id === id); return ex ? el("span", { class: "due-item" }, `${ex.title} (${n})`) : null; })];
+    } else {
+      const totals = await Promise.all((me.users || []).map(async n => [n, totalOf(dueOf(await summaryOf(n)))]));
+      const due = totals.filter(([, t]) => t > 0);
+      if (due.length) parts = [el("h2", null, "🔁 " + t("repeat.title")),
+        el("p", { class: "small", style: "margin:0 0 6px" }, t("repeat.overview")),
+        ...due.map(([n, t]) => el("span", { class: "due-item" }, personTag(n), `: ${t}`))];
+    }
+    if (token !== repeatToken) return;   // the filter changed meanwhile
+    parts = parts.filter(Boolean);
+    repeatBox.replaceChildren(...(parts.length ? [foldable("repeat", parts)] : []));
+    repeatBox.hidden = !parts.length;
+  }
+
+  // subject chip: picture (flag or icon, see subjects.js) and name
+  const subjectWithIcon = s => { const f = document.createDocumentFragment(); f.append(CampusSubjects.icon(s), CampusSubjects.name(s)); return f; };
+  function chips(rowId, key, values, label, color) {
+    const row = document.getElementById(rowId);
+    row.querySelectorAll(".chip").forEach(c => c.remove());
+    for (const v of [null, ...values]) {
+      const b = el("button", { class: "chip", type: "button", "aria-pressed": String(state[key] === v) });
+      if (color && v) { CampusPeople.paint(b, v); b.classList.add("person-chip"); }   // whole chip in the person's colour
+      b.append(v ? label(v) : t("filter.all"));
+      b.addEventListener("click", () => {
+        state[key] = v;
+        row.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+        // choosing a person also chooses their area and level (e.g. Sek 1, or "Carpenter · up to 2nd year"; "Alle" → all)
+        const pp = state.person && people[state.person];
+        if (key === "person") {
+          const np = v && people[v];
+          state.area = np && areaById[np.area] ? np.area : null;
+          state.cat = catOf(state.area);
+          state.level = exactLevel(np, state.area);
+        }
+        if (key === "cat") {   // a category: its only area, or the selected person's area in it
+          const list = v ? areasOfCat(v) : [];
+          state.area = list.length === 1 ? list[0] : pp && list.includes(pp.area) ? pp.area : null;
+          state.level = exactLevel(pp, state.area);
+        }
+        if (key === "area") {   // a new area: its own level for the selected person, otherwise all levels
+          if (v) state.cat = catOf(v);
+          state.level = v && pp && pp.area === v ? exactLevel(pp, v) : null;
+        }
+        if (key === "level" && v && !state.area) state.area = levelArea();
+        save(); render();
+      });
+      row.append(b);
+    }
+  }
+
+  const allPeople = Object.keys(people);
+  // all defined areas and levels are offered, also before they have tiles (then "noch keine Übungen")
+  const usedAreas = areaList.map(a => a.id);
+  const usedLevelsOf = id => (areaById[id] || {}).levels || [];
+  const pickableAreas = () => usedAreas.filter(id => !isForAll(id));
+  // the area whose levels the "Stufe" row shows: the chosen one, or the only one of the chosen category
+  const levelArea = () => state.area || (state.cat && areasOfCat(state.cat).length === 1 ? areasOfCat(state.cat)[0] : null);
+  const bySubjectName = (a, b) => CampusSubjects.name(a).localeCompare(CampusSubjects.name(b), I18n.locale);
+  const allSubjects = [...new Set(exercises.flatMap(ex => ex.subjects || []))].sort(bySubjectName);
+  if (state.person && !allPeople.includes(state.person)) state.person = null;
+  if (state.area && !usedAreas.includes(state.area)) { state.area = null; state.level = null; }
+  if (state.level && !usedLevelsOf(levelArea()).includes(state.level)) state.level = null;
+  if (state.subject && !allSubjects.includes(state.subject)) state.subject = null;
+  chips("f-person", "person", allPeople, n => n, personColor);
+  // "Bereich" = categories; "Beruf" = the areas of a category with several (Berufsbildung); "Stufe" = levels of the area
+  function renderAreaLevelChips() {
+    const catRow = document.getElementById("f-cat"), areaRow = document.getElementById("f-area"), levelRow = document.getElementById("f-level");
+    catRow.hidden = categories.length < 2;
+    if (!catRow.hidden) chips("f-cat", "cat", categories.map(c => c.id), catName, null);
+    const inCat = state.cat ? areasOfCat(state.cat) : [];
+    areaRow.hidden = inCat.length < 2;
+    if (!areaRow.hidden) chips("f-area", "area", inCat, areaShort, null);   // short names, e.g. "Carpenter"
+    const lvls = levelArea() ? usedLevelsOf(levelArea()) : [];
+    levelRow.hidden = !lvls.length;
+    if (lvls.length) chips("f-level", "level", lvls, l => levelName(levelArea(), l), null);
+  }
+  // "Zurücksetzen": the start selection (parents "Für alle", learners themselves, their area and level)
+  document.getElementById("filter-reset").addEventListener("click", () => {
+    Object.assign(state, defaults()); save();
+    chips("f-person", "person", allPeople, n => n, personColor);
+    render();
+  });
+  // Subject chips follow the person and level filter: only subjects with visible tiles or upcoming exams.
+  function renderSubjectChips() {
+    const today = todayIso();
+    const used = new Set(exercises.filter(ex => visible(ex, true)).flatMap(ex => ex.subjects || []));
+    if (state.person) exams.forEach(x => { if (x.date >= today && (x.people || []).includes(state.person)) used.add(x.subject); });
+    if (state.subject) used.add(state.subject);
+    chips("f-subject", "subject", allSubjects.concat([...used].filter(x => !allSubjects.includes(x)))
+      .filter(x => used.has(x)).sort(bySubjectName), subjectWithIcon, null);
+  }
+
+  function cover(ex) {
+    const box = el("div", { class: "cover" });
+    const fallback = () => box.replaceChildren(el("div", { class: "fallback", style: `background:linear-gradient(135deg, ${levelColor(ex.level)}, #26233a)` }, (ex.title || "?").charAt(0)));
+    if (ex.image) {
+      const img = el("img", { src: ex.image, alt: "", loading: "lazy" });
+      img.addEventListener("error", fallback);
+      box.append(img);
+    } else fallback();
+    return box;
+  }
+
+  // progress of the logged-in person in one exercise
+  function progressOf(ex, sum = summary) {   // sum: the summary of the person (default: the logged-in one)
+    const prog = ((sum || {}).exercises || {})[ex.id] || {};
+    const done = (ex.sets || []).filter(s => prog[s.id]);
+    const avg = done.length ? Math.round(done.reduce((a, s) => a + prog[s.id].best, 0) / done.length) : null;
+    const runs = done.reduce((a, s) => a + prog[s.id].runs, 0);
+    return { done: done.length, total: (ex.sets || []).length, avg, runs };
+  }
+  const scoreColor = avg => avg >= 80 ? "#1f9d55" : avg >= 50 ? "#e8890c" : "#d64545";
+
+  function status(ex) {
+    const p = progressOf(ex);
+    const due = (summary.due || {})[ex.id] || 0;
+    const box = el("div", { class: "status" });
+    if (!p.done) {
+      box.append(el("div", { class: "line" }, el("span", { class: "new" }, "● " + t("tile.new")), due ? el("span", { class: "due" }, `🔁 ${due}`) : null));
+      return box;
+    }
+    box.style.setProperty("--c", scoreColor(p.avg));
+    box.append(
+      el("div", { class: "line" }, el("span", { class: "ok" }, "✓ " + t("tile.sets", { done: p.done, count: p.total }) + " · Ø " + I18n.percent(p.avg / 100)), el("span", null, t("tile.runs", { count: p.runs })), due ? el("span", { class: "due" }, "🔁 " + t("tile.due", { count: due })) : null),
+      el("div", { class: "bar", title: t("tile.sets", { done: p.done, count: p.total }) }, el("i", { style: `width:${Math.round(100 * p.done / Math.max(p.total, 1))}%` })));
+    return box;
+  }
+
+  function tile(ex) {
+    const tags = el("div", { class: "tags" },
+      ...(ex.subjects || []).map(s => el("span", { class: "tag subject" }, CampusSubjects.name(s))),
+      ...(ex.topics || []).map(x => el("span", { class: "tag" }, x)));
+    // content in another language than the UI: small badge ("DE" on a German tile in an English UI)
+    const otherLang = ex.lang && ex.lang.split("-")[0] !== I18n.locale.split("-")[0];
+    return el("a", { class: "tile", href: ex.path },
+      cover(ex),
+      el("div", { class: "body" },
+        el("h2", { lang: ex.lang || null }, ex.title, otherLang ? el("span", { class: "lang-badge", title: I18n.nameOf(ex.lang) }, ex.lang.split("-")[0].toUpperCase()) : null),
+        el("div", { class: "meta" }, el("span", { class: "level", style: `--c:${levelColor(ex.level)}` }, levelLabel(ex)), tileDate(ex)),
+        status(ex),
+        ex.description ? el("p", { class: "desc", lang: ex.lang || null }, ex.description) : null,
+        tags));
+  }
+
+  // Tiles of the chosen area (and level), or – with only a person chosen – of their area up to their level
+  // (lower levels = repetition). Tiles of "forAll" areas (Allgemeinwissen) are always shown.
+  function visible(ex, ignoreSubject) {
+    const a = areaOfEx(ex), p = state.person && people[state.person];
+    const subjectOk = ignoreSubject || !state.subject || (ex.subjects || []).includes(state.subject);
+    // Allgemeinwissen ("forAll") tiles only with "Bereich: Alle" or "Bereich: Allgemeinwissen" – never inside
+    // another category, so they are not mistaken for e.g. Weiterbildung tiles
+    if (isForAll(a) && state.area !== a) return subjectOk && !state.level && (!state.cat || state.cat === catOf(a));
+    if (state.area && a !== state.area) return false;
+    if (state.cat && catOf(a) !== state.cat) return false;
+    if (state.level) { if (ex.level !== state.level) return false; }
+    else if (p && p.area && (!state.area || state.area === p.area) && (!state.cat || state.cat === catOf(p.area))) {   // own area: up to their level
+      if (a !== p.area) return false;
+      if (p.level && ex.level && levelIndexIn(a, ex.level) > levelIndexIn(a, p.level)) return false;
+    }
+    return subjectOk;
+  }
+
+  // next upcoming exam per exercise for the current selection (same exams as "Nächste Prüfungen")
+  let nextExam = {};
+  const NEW_DAYS = 14;
+  const dayMonth = iso => I18n.date(iso, { day: "numeric", month: "short" });   // "24. Nov." / "Nov 24"
+  const shortDate = iso => I18n.date(iso, { weekday: "short", day: "numeric", month: "short" });
+  // tiles of the very first day (the initial set) are never "neu"
+  const firstDay = exercises.reduce((m, ex) => ex.date && ex.date < m ? ex.date : m, "9999");
+  function tileDate(ex) {
+    const x = nextExam[ex.id];
+    if (x) return el("time", { datetime: x, class: "exam-date" }, "📅 " + t("tile.exam", { date: shortDate(x) }));
+    if (ex.date && ex.date > firstDay && daysUntil(ex.date, todayIso()) >= -NEW_DAYS) return el("time", { datetime: ex.date }, t("tile.newSince", { date: dayMonth(ex.date) }));
+    return null;
+  }
+
+  function render() {
+    renderAreaLevelChips();
+    renderSubjectChips();
+    renderFilterSummary();
+    nextExam = {};
+    for (const x of examList()) for (const id of examTiles(x)) if (!(id in nextExam)) nextExam[id] = x.date;   // examList is sorted by date
+    // one list, no groups: tiles with an upcoming exam first (soonest first), then the newest, then by title
+    const shown = exercises.filter(ex => visible(ex)).sort((a, b) => {
+      const ea = nextExam[a.id], eb = nextExam[b.id];
+      if (ea || eb) return !ea ? 1 : !eb ? -1 : ea.localeCompare(eb);
+      return (b.date || "").localeCompare(a.date || "") || a.title.localeCompare(b.title, I18n.locale);
+    });
+    list.replaceChildren(...(shown.length ? [el("div", { class: "grid" }, ...shown.map(tile))] : []));
+    empty.hidden = shown.length > 0;
+    const chosen = state.area ? areaName(state.area) : state.cat ? catName(state.cat) : null;
+    empty.textContent = chosen ? t("home.noneYet", { name: chosen }) : t("home.none");
+    const repeatTarget = !me.admin || state.person === me.name ? me.name : state.person;
+    const hasRepeat = repeatTarget === me.name ? dueOf(summary).length > 0 : true;   // others: only known after loading
+    firstOpen = examList().length ? "exams" : hasRepeat ? "repeat" : focusPerson() ? "focus" : null;
+    renderExams();
+    renderRepeat();
+    renderFocus();
+  }
+  WIDE.addEventListener("change", () => { filtersBox.open = "filters" in folded ? !folded.filters : WIDE.matches; render(); });
+
+  // status of a person in an exercise (default: the logged-in one), short form for the exam and focus lists
+  function statusText(ex, sum) {
+    const p = progressOf(ex, sum);
+    if (!p.done) return el("span", { class: "st", style: "color:var(--accent)" }, t("tile.newShort"));
+    return el("span", { class: "st", style: `color:${scoreColor(p.avg)}` }, t("tile.setsShort", { done: p.done, count: p.total }) + " · Ø " + I18n.percent(p.avg / 100));
+  }
+  const exams = (data.exams || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+  const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const SOON_DAYS = 14;
+  const daysUntil = (iso, today) => Math.round((new Date(iso + "T12:00:00") - new Date(today + "T12:00:00")) / 864e5);
+  const soonLabel = days => days <= 6 ? I18n.days(days) : null;   // "today", "tomorrow", "in 3 days"
+
+  // Upcoming exams of the selected person, at the top: the next 14 days first, later ones dimmed.
+  const examsBox = document.getElementById("exams");
+  // the tiles of an exam: "exercise" in exams.json is one tile id or a list of them
+  const examTiles = x => (Array.isArray(x.exercise) ? x.exercise : x.exercise ? [x.exercise] : []).filter(id => exercises.some(e => e.id === id));
+  // sums: summaries of the people whose exam it is, by name (their own progress – also when parents look)
+  function examItem(x, today, withNames, sums) {
+    const d = new Date(x.date + "T12:00:00");
+    const days = daysUntil(x.date, today), soon = soonLabel(days);
+    const who = withNames ? (x.people || []) : [examsWhose()];
+    const tiles = examTiles(x).map(id => exercises.find(e => e.id === id));
+    const tileLine = ex => el("li", null, el("a", { href: ex.path },
+      el("span", { class: "t" }, "→ " + ex.title),
+      el("span", { class: "sts" }, ...who.map(n => who.length > 1 ? el("span", null, personTag(n), " ", statusText(ex, sums[n])) : statusText(ex, sums[n])))));
+    const goals = (x.goals || []).length ? el("details", { class: "goals" },
+      el("summary", null, t("exams.goals", { count: x.goals.length })),
+      el("ul", null, ...x.goals.map(g => el("li", null, g)))) : null;
+    return el("li", { class: days > SOON_DAYS ? "later" : "" },
+      el("div", { class: "exam" },
+        el("span", { class: "date-box" }, I18n.date(d, { weekday: "short" }), el("b", null, I18n.date(d, { day: "numeric" })), I18n.date(d, { month: "short" })),
+        el("div", { class: "txt" },
+          el("b", null, CampusSubjects.name(x.subject), withNames ? el("span", { class: "who" }, " · ", ...(x.people || []).map(personTag)) : null, soon ? el("span", { class: "soon" }, ` · ${soon}`) : null),
+          el("small", null, x.topic),
+          tiles.length ? el("ul", { class: "ex-tiles" }, ...tiles.map(tileLine)) : el("small", { class: "no-tile" }, t("exams.noTile")),
+          goals)));   // the learning goals inside the exam's box, below its tiles
+  }
+  // "Alle": a learner sees her own exams (the server sends no others), parents see everyone's with names
+  const examsWhose = () => state.person || (me.admin ? null : me.name);
+  const examList = () => { const today = todayIso(), whose = examsWhose();
+    return exams.filter(x => x.date >= today && (!whose || (x.people || []).includes(whose)) && (!state.subject || x.subject === state.subject)); };
+  let examsToken = 0;
+  async function renderExams() {
+    const token = ++examsToken;
+    const today = todayIso();
+    const whose = examsWhose();
+    const shown = examList();
+    if (!shown.length) { examsBox.hidden = true; examsBox.replaceChildren(); return; }
+    // the progress of everyone whose exam is shown (parents may read their children's summaries)
+    const names = [...new Set(whose ? [whose] : shown.flatMap(x => x.people || []))];
+    const sums = Object.fromEntries(await Promise.all(names.map(async n => [n, await summaryOf(n)])));
+    if (token !== examsToken) return;   // a newer render started meanwhile
+    const soon = shown.filter(x => daysUntil(x.date, today) <= SOON_DAYS), later = shown.filter(x => daysUntil(x.date, today) > SOON_DAYS);
+    // the number stays visible when the section is folded
+    const parts = [el("h2", null, "📅 " + (whose ? t("exams.titleOf", { name: whose }) : t("exams.title")) + ` (${I18n.number(shown.length)})`)];
+    if (soon.length) parts.push(el("ul", null, ...soon.map(x => examItem(x, today, !whose, sums))));
+    if (later.length) parts.push(el("h3", null, soon.length ? t("exams.later") : t("exams.laterThan", { count: SOON_DAYS })), el("ul", null, ...later.map(x => examItem(x, today, !whose, sums))));
+    examsBox.replaceChildren(foldable("exams", parts));
+    examsBox.hidden = false;
+  }
+
+  // Focus: curated basics in recommended order; the first one not yet at 80 % in every set is "next".
+  const focusBox = document.getElementById("focus");
+  // the selected person, if the focus list is shown for them (own level or no level filter, no subject filter)
+  const focusPerson = () => { const p = state.person && people[state.person];
+    return p && (p.focus || []).length && !(state.area && state.area !== p.area) && !(state.level && state.level !== p.level) && !state.subject ? p : null; };
+  let focusToken = 0;
+  async function renderFocus() {
+    const token = ++focusToken;
+    const p = state.person && people[state.person];
+    if (!focusPerson()) { focusBox.hidden = true; focusBox.replaceChildren(); return; }
+    const sum = await summaryOf(state.person);   // the progress of that person – also when parents look
+    if (token !== focusToken) return;
+    const items = p.focus.map(f => ({ ex: exercises.find(x => x.id === f.exercise), reason: f.reason })).filter(x => x.ex);
+    const nextIdx = items.findIndex(({ ex }) => { const s = progressOf(ex, sum); return s.done < s.total || s.avg < 80; });
+    focusBox.replaceChildren(foldable("focus", [
+      el("h2", null, "🎯 " + t("focus.title", { name: state.person })),
+      el("p", { class: "small", style: "margin:0 0 12px;color:var(--muted)" }, t("focus.explain")),
+      el("ol", null, ...items.map(({ ex, reason }, i) =>
+        el("li", { class: i === nextIdx ? "next" : "" }, el("a", { href: ex.path },
+          el("span", { class: "nr" }, String(i + 1)),
+          el("span", { class: "txt" }, el("b", null, ex.title, i === nextIdx ? el("span", { class: "next-badge" }, t("focus.next")) : null), el("small", null, reason)),
+          statusText(ex, sum)))))]));
+    focusBox.hidden = false;
+  }
+  render();
+})();
+</script>
+<script src="version.js"></script>
+</body>
+</html>

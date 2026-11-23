@@ -1,0 +1,88 @@
+{
+ "_comment": "Tiles that ship with the app: a demo written for the app. Areas refer to the default categories below; a campus adds its own categories, areas and tiles.",
+ "categories": [
+  {
+   "id": "school",
+   "name": {
+    "en": "School",
+    "de": "Schule",
+    "de-CH": "Volksschule"
+   },
+   "areas": []
+  },
+  {
+   "id": "vocational",
+   "name": {
+    "en": "Vocational training",
+    "de": "Berufsbildung"
+   },
+   "areas": []
+  },
+  {
+   "id": "studies",
+   "name": {
+    "en": "Studies",
+    "de": "Studium"
+   },
+   "areas": []
+  },
+  {
+   "id": "further",
+   "name": {
+    "en": "Further education",
+    "de": "Weiterbildung"
+   },
+   "areas": [
+    {
+     "id": "software",
+     "name": {
+      "en": "Software development",
+      "de": "Software-Entwicklung"
+     },
+     "levels": []
+    }
+   ]
+  },
+  {
+   "id": "general",
+   "name": {
+    "en": "General knowledge",
+    "de": "Allgemeinwissen"
+   },
+   "areas": [
+    {
+     "id": "general",
+     "name": {
+      "en": "General knowledge",
+      "de": "Allgemeinwissen"
+     },
+     "levels": [],
+     "forAll": true
+    }
+   ]
+  }
+ ],
+ "tiles": [
+  {
+   "id": "demo-internet-basics",
+   "module": "internet_basics.js",
+   "extension": "prim_extension.js",
+   "title": "Internet basics",
+   "lang": "en",
+   "description": "Router, server and provider, IP addresses, Prim's algorithm (interactive) and thinking before you post – the demo tile of Family Campus.",
+   "date": "2026-11-22",
+   "area": "general",
+   "subjects": [
+    "media-it"
+   ],
+   "topics": [
+    "Router",
+    "IP address",
+    "DNS",
+    "Prim's algorithm",
+    "Digital footprint"
+   ],
+   "source": "own"
+  }
+ ]
+}

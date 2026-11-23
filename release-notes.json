@@ -1,0 +1,25 @@
+{
+ "unreleased": {},
+ "versions": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-22",
+   "notes": {
+    "en": [
+     "Every tile has a summary sheet and short sets – many questions are new on every run.",
+     "Mistakes come back in your review box until you know them.",
+     "Your next exams are at the top, with their learning goals.",
+     "Choose your language in your menu at the top right.",
+     "A ✨ next to the version shows that there is something new – tap it."
+    ],
+    "de": [
+     "Jede Kachel hat ein Merkblatt und kurze Sets – viele Fragen sind bei jedem Durchgang neu.",
+     "Fehler kommen in der Lernkartei wieder, bis du sie kannst.",
+     "Deine nächsten Prüfungen stehen zuoberst, mit ihren Lernzielen.",
+     "Die Sprache wählst du oben rechts in deinem Menü.",
+     "Ein ✨ neben der Version zeigt, dass es etwas Neues gibt – tippe darauf."
+    ]
+   }
+  }
+ ]
+}

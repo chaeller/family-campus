@@ -1,0 +1,16 @@
+[
+ {
+  "date": "2026-12-08",
+  "people": [
+   "Anna"
+  ],
+  "subject": "media-it",
+  "topic": "Internet basics",
+  "exercise": "demo-internet-basics",
+  "goals": [
+   "I can explain what a router, a server and a provider do.",
+   "I can tell valid and private IPv4 addresses.",
+   "I can connect a network with Prim's algorithm."
+  ]
+ }
+]

@@ -1,0 +1,38 @@
+# --- Family Campus ---
+# build output (Family Campus + my-family merged by tools/build.py)
+build/
+# my-family and secrets never belong into the Family Campus repository (the example family does)
+my-family/
+data/
+material/
+*.env
+.env*
+!.env.example
+!example-family/campus.env.example
+# local Claude Code state; the skills are part of Family Campus
+.claude/*
+!.claude/skills/
+# list of private words for tools/publish_check.sh (kept outside the repository)
+.publish-deny
+
+# --- Python (from GitHub's Python template, the parts that apply) ---
+__pycache__/
+*.py[codz]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.log
+
+# --- Editors and systems ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

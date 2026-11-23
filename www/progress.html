@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family Campus</title>
+<link rel="icon" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="i18n.js"></script>
+<script src="subjects.js"></script>
+<script src="people.js"></script>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#6b4eff">
+<style>
+:root{--bg:#f6f4ff;--card:#fff;--ink:#26233a;--muted:#6c6886;--line:#e4e0f5;--chip:#efeafe;--chip-ink:#3d2fa0;--accent:#6b4eff;--ok:#1f9d55;--mid:#e8890c;--bad:#d64545}
+@media (prefers-color-scheme: dark){:root{--bg:#16141f;--card:#211e2e;--ink:#ece9f7;--muted:#a39fbb;--line:#332f45;--chip:#2e2945;--chip-ink:#c9bfff;--accent:#8b72ff}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.45}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 80px}
+a{color:var(--accent)}
+/* header: small back link above, title, one line about whose progress it is */
+.top{margin:4px 0 18px}
+.top .back{display:inline-block;font-size:.9rem;font-weight:600;text-decoration:none;margin-bottom:6px}
+.top .back:hover{text-decoration:underline}
+h1{margin:0;font-size:1.5rem;line-height:1.2}
+.top .sub{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.person{color:var(--c);font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 22px}
+.kpi{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 0 var(--line)}
+.kpi b{display:block;font-size:1.6rem}
+.kpi span{color:var(--muted);font-size:.88rem}
+.card{background:var(--card);border-radius:16px;padding:12px 16px;box-shadow:0 2px 0 var(--line);margin:0 0 16px;border-top:3px solid #868e96}   /* like the home page cards: neutral, colour only for names */
+h2{font-size:1rem;font-weight:650;line-height:1.3;margin:0 0 10px}   /* same as the card headings on the home page */
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:start;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.ex td{background:var(--chip);font-weight:700}
+.pct{font-weight:700}
+.subj{display:inline-block;font-size:.72rem;font-weight:700;line-height:1.2;padding:2px 8px;margin:0 6px 2px 0;border-radius:99px;background:var(--chip);color:var(--chip-ink);vertical-align:middle;white-space:nowrap}
+.muted{color:var(--muted)}
+.filters{display:grid;gap:10px;margin:0 0 16px}
+.filters[hidden]{display:none}   /* "display:grid" would override the hidden attribute */
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-inline-start:calc(4rem + 8px)}
+.filter-row[hidden]{display:none}
+.filter-row > span{font-size:.85rem;color:var(--muted);flex:0 0 4rem;margin-inline-start:calc(-4rem - 8px)}
+/* phones: the label above its chips, smaller chips (as on the home page) */
+@media (max-width:600px){
+  .filter-row{padding-inline-start:0;gap:6px}
+  .filter-row > span{flex:0 0 100%;margin:0 0 -2px;font-size:.78rem;font-weight:600;letter-spacing:.02em}
+  .filter-row .chip{font-size:.88rem;padding:4px 11px;min-height:34px}
+}
+.chip{font:inherit;font-size:.92rem;border:2px solid transparent;border-radius:99px;padding:6px 14px;cursor:pointer;background:var(--chip);color:var(--chip-ink);min-height:40px}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff}
+.chip.person-chip{background:color-mix(in srgb, var(--c) 14%, var(--card));color:var(--c);font-weight:700}   /* name in the full person colour, as everywhere */
+.chip.person-chip[aria-pressed="true"]{background:var(--c);color:var(--c-text)}
+.chip.person-chip:hover{border-color:var(--c)}
+.kpi.all span::after{content:" · " attr(data-total);opacity:.8}
+.today .big{font-size:1rem;font-weight:650;line-height:1.3;margin:0 0 4px}
+.today ul{margin:8px 0 0;padding-inline-start:1.2rem}
+.days{display:flex;gap:4px;align-items:flex-end;height:110px;padding-top:18px}
+.days div b{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--muted);font-weight:600}
+.days div{flex:1;min-width:8px;max-width:34px;background:var(--accent);border-radius:4px 4px 0 0;position:relative}
+.days div i{position:absolute;bottom:0;inset-inline:0;background:var(--ok);border-radius:4px 4px 0 0}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <a class="back" href="./" data-i18n="nav.home"></a>
+    <h1>📊 <span data-i18n="progress.title"></span></h1>
+    <p class="sub" id="who"></p>
+  </header>
+  <section class="filters" id="people" data-i18n-attr="aria-label:filter.for" hidden>
+    <div class="filter-row" id="f-person"><span data-i18n="filter.for"></span></div>
+  </section>
+  <section class="filters" id="filters" data-i18n-attr="aria-label:filter.title" hidden>
+    <div class="filter-row" id="f-level"><span data-i18n="filter.level"></span></div>
+    <div class="filter-row" id="f-subject"><span data-i18n="filter.subject"></span></div>
+  </section>
+  <section class="card today" id="today" aria-live="polite"></section>
+  <div class="kpis" id="kpis"></div>
+  <section class="card"><h2><span data-i18n="progress.activity"></span> <span class="muted" id="days-all" style="font-size:.85rem;font-weight:400" hidden>· <span data-i18n="progress.allExercises"></span></span></h2><div class="days" id="days"></div><p class="muted" style="font-size:.85rem;margin:6px 0 0" data-i18n="progress.legend"></p></section>
+  <section class="card"><h2 data-i18n="progress.sets"></h2><div class="scroll"><table id="sets"></table></div></section>
+  <section class="card"><h2 data-i18n="progress.runs"></h2><div class="scroll"><table id="att"></table></div></section>
+  <section class="card"><h2 data-i18n="progress.wrong"></h2><div class="scroll"><table id="wrong"></table></div></section>
+</main>
+<script>
+(async function () {
+  await I18n.ready;
+  const tr = I18n.t;
+  document.title = tr("progress.title") + " – Family Campus";
+  const el = (t, a, ...k) => { const n = document.createElement(t); for (const [x, v] of Object.entries(a || {})) n.setAttribute(x, v); k.forEach(c => c != null && n.append(c)); return n; };
+  const pctCol = p => p >= 80 ? "var(--ok)" : p >= 50 ? "var(--mid)" : "var(--bad)";
+  const dt = iso => I18n.date(iso, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const pctText = p => I18n.percent(p / 100);
+  const get = async u => { const r = await fetch(u); if (r.status === 401) { location.href = "login.html?next=" + encodeURIComponent(location.pathname); throw 0; } return r.json(); };
+  const me = await get("api/me");
+  const data = await get("exercises.json");
+  const exById = Object.fromEntries(data.exercises.map(ex => [ex.id, ex]));
+  // exercise name with its subject as a label (same for every exercise, independent of set titles)
+  // subject label with its picture (flag, 🌐 or icon) – shared with the home page in subjects.js
+  const subjChip = ex => {
+    const parts = CampusSubjects.label(ex.subjects);
+    if (!parts.length) return null;
+    const chip = el("span", { class: "subj" }); chip.append(...parts); return chip;
+  };
+  const exLabel = id => { const ex = exById[id] || {}; return el("span", { lang: ex.lang || null }, subjChip(ex), ex.title || id); };
+  const setTitle = (ex, s) => s === "__repeat" ? "🔁 " + tr("repeat.title") : (((exById[ex] || {}).sets || []).find(x => x.id === s) || {}).title || s;
+  let user = new URLSearchParams(location.search).get("user") || me.name;
+
+  const who = document.getElementById("who");
+  if (me.admin) {
+    // parents choose the person like on the home page ("Für"), exactly one person (no "Alle")
+    const row = document.getElementById("f-person");
+    for (const n of me.users) {
+      const b = el("button", { class: "chip", type: "button", "aria-pressed": String(n === user) });
+      CampusPeople.paint(b, n); b.classList.add("person-chip");   // whole chip in the person's colour
+      b.append(n);
+      b.addEventListener("click", () => {
+        if (n === user) return;
+        user = n;
+        row.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+        history.replaceState(null, "", "?user=" + encodeURIComponent(user));
+        load();
+      });
+      row.append(b);
+    }
+    document.getElementById("people").hidden = false;
+  }
+  // one line under the title: whose progress (the name in the person's colour, as everywhere)
+  function renderWho() {
+    const tag = el("span", { class: "person" }, user); tag.style.setProperty("--c", CampusPeople.color(user));
+    // "Lernstand von {name}": the name goes in as an element, so split the text around the placeholder
+    const [before, after] = tr("progress.of", { name: "\u0000" }).split("\u0000");
+    who.replaceChildren(...(user === me.name ? [tr("progress.own")] : [before, tag, after || ""]));
+  }
+
+  // Filters by level and subject; only values that occur in the person's data are offered.
+  // "Level" uses the same labels as the tile badges: "Sek 1", "Carpenter · 1st year", the area name
+  const lvlId = l => l && typeof l === "object" ? l.id : l;
+  const areaList = (data.categories || []).flatMap(c => c.areas || []);
+  const areaById = Object.fromEntries(areaList.map(a => [a.id, a]));
+  const levelName = (a, lvl) => { const l = (a.levels || []).find(x => lvlId(x) === lvl); return l && typeof l === "object" ? I18n.name(l.name) : lvl; };
+  const stageLabel = (a, lvl) => !lvl ? I18n.name(a.name) : a.levelOnly || !a.short ? levelName(a, lvl) : `${I18n.name(a.short)} · ${levelName(a, lvl)}`;
+  const levelOf = ex => { const a = areaById[ex.area] || { name: tr("home.forAll") }; return stageLabel(a, ex.level); };
+  const levelOrder = areaList.flatMap(a => (a.levels || []).length ? a.levels.map(l => stageLabel(a, lvlId(l))) : [I18n.name(a.name)]);
+  const filter = { level: null, subject: null };
+  let sum, hist;
+  function chips(rowId, key, values) {
+    const row = document.getElementById(rowId);
+    row.querySelectorAll(".chip").forEach(c => c.remove());
+    for (const v of [null, ...values]) {
+      const b = el("button", { class: "chip", type: "button", "aria-pressed": String(filter[key] === v) });
+      if (v && key === "subject") b.append(CampusSubjects.icon(v), CampusSubjects.name(v));   // same pictures as on the home page
+      else b.append(v || tr("filter.all"));
+      b.addEventListener("click", () => { filter[key] = v; render(); });
+      row.append(b);
+    }
+  }
+  const matches = id => { const ex = exById[id]; if (!ex) return !filter.level && !filter.subject;
+    return (!filter.level || levelOf(ex) === filter.level) && (!filter.subject || (ex.subjects || []).includes(filter.subject)); };
+
+  async function load() {
+    renderWho();
+    const q = "?user=" + encodeURIComponent(user);
+    [sum, hist] = await Promise.all([get("api/summary" + q), get("api/history" + q + "&tz=" + new Date().getTimezoneOffset())]);
+    render();
+  }
+
+  // "Heute": today's answers and finished sets of the person (local day), with the level/subject filter
+  const hm = iso => I18n.time(iso);
+  const isToday = iso => new Date(iso).toDateString() === new Date().toDateString();
+  function renderToday() {
+    const box = document.getElementById("today");
+    const ans = (hist.today || []).filter(a => matches(a.exercise));
+    const sets = hist.attempts.filter(a => isToday(a.ts) && a.mode !== "repeat" && matches(a.exercise));
+    if (!ans.length && !sets.length) { box.replaceChildren(el("p", { class: "big" }, "📅 " + tr("today.title")),
+      el("p", { class: "muted", style: "margin:0" }, user === me.name ? tr("today.noneOwn") : tr("today.none", { name: user }))); return; }
+    const ok = ans.filter(a => a.correct).length;
+    // practice sessions: answers less than 20 minutes apart belong together
+    const times = ans.map(a => new Date(a.ts)); const sessions = [];
+    times.forEach((t, i) => { if (!i || t - times[i - 1] > 20 * 60e3) sessions.push([t, t]); else sessions[sessions.length - 1][1] = t; });
+    const span = sessions.map(([a, b]) => hm(a) === hm(b) ? hm(a) : `${hm(a)}–${hm(b)}`).join(", ");
+    const perEx = {}; ans.forEach(a => { const e = perEx[a.exercise] ||= { n: 0, ok: 0, sets: 0 }; e.n++; e.ok += a.correct ? 1 : 0; });
+    sets.forEach(a => { (perEx[a.exercise] ||= { n: 0, ok: 0, sets: 0 }).sets++; });
+    box.replaceChildren(
+      el("p", { class: "big" }, "📅 " + tr("today.title") + ": " + tr("today.answers", { count: ans.length, ok })
+        + (ans.length ? ` (${pctText(Math.round(100 * ok / ans.length))})` : "") + " · " + tr("today.sets", { count: sets.length })),
+      ...(span ? [el("p", { class: "muted", style: "margin:0" }, tr("today.times", { times: span }))] : []),   // replaceChildren would print "null"
+      el("ul", null, ...Object.entries(perEx).sort((a, b) => b[1].n - a[1].n).map(([id, e]) =>
+        el("li", null, exLabel(id), el("span", { class: "muted" }, " – " + tr("today.answers", { count: e.n, ok: e.ok }) + (e.sets ? ", " + tr("today.setsShort", { count: e.sets }) : ""))))));
+  }
+
+  function render() {
+    const usedIds = new Set([...Object.keys(sum.exercises || {}), ...Object.keys(sum.inBox || {}), ...hist.attempts.map(a => a.exercise), ...hist.wrong.map(w => w.exercise)]);
+    const usedEx = [...usedIds].map(id => exById[id]).filter(Boolean);
+    const levels = levelOrder.filter(l => usedEx.some(ex => levelOf(ex) === l));
+    if (!levels.includes(filter.level)) filter.level = null;
+    const subjects = [...new Set(usedEx.filter(ex => !filter.level || levelOf(ex) === filter.level).flatMap(ex => ex.subjects || []))].sort((a, b) => CampusSubjects.name(a).localeCompare(CampusSubjects.name(b), I18n.locale));
+    if (!subjects.includes(filter.subject)) filter.subject = null;
+    document.getElementById("filters").hidden = !usedEx.length;
+    chips("f-level", "level", levels);
+    chips("f-subject", "subject", subjects);
+    const filtered = !!(filter.level || filter.subject);
+    const sumOf = obj => Object.entries(obj || {}).filter(([id]) => matches(id)).reduce((a, [, n]) => a + n, 0);
+
+    const pct = sum.answers ? Math.round(100 * sum.correct / sum.answers) : 0;
+    const due = sumOf(sum.due), inBox = sumOf(sum.inBox);
+    const exShown = data.exercises.filter(ex => matches(ex.id));
+    const kp = document.getElementById("kpis");
+    // answers, score and mastered exist only as totals; marked "gesamt" while a filter is active
+    const n = I18n.number;
+    kp.replaceChildren(...[[n(sum.answers), tr("kpi.answers"), true], [pctText(pct), tr("kpi.correct"), true], [n(exShown.filter(ex => sum.exercises[ex.id]).length) + " / " + n(exShown.length), tr("kpi.started")], [n(inBox), tr("kpi.inBox")], [n(due), tr("kpi.due")], [n(sum.mastered), tr("kpi.mastered"), true]]
+      .map(([v, l, total]) => el("div", { class: "kpi" + (total && filtered ? " all" : ""), "data-total": tr("kpi.total") }, el("b", null, String(v)), el("span", null, l))));
+    document.getElementById("days-all").hidden = !filtered;
+
+    renderToday();
+    const days = document.getElementById("days");
+    const ds = hist.days.slice().reverse(); const max = Math.max(1, ...ds.map(d => d.n));
+    days.replaceChildren(...(ds.length ? ds.map(d => { const b = el("div", { title: I18n.date(d.d, { weekday: "short", day: "numeric", month: "short" }) + ": " + tr("today.answers", { count: d.n, ok: d.ok }), style: `height:${100 * d.n / max}%` }); b.append(el("i", { style: `height:${100 * d.ok / Math.max(d.n, 1)}%` }), el("b", null, String(d.n))); return b; }) : [el("p", { class: "muted" }, tr("progress.noActivity"))]));
+
+    const t = document.getElementById("sets");
+    const rows = [el("tr", null, el("th", null, tr("table.set")), el("th", null, tr("table.practised")), el("th", null, tr("table.best")), el("th", null, tr("table.last")))];
+    for (const ex of exShown) {
+      const pr = sum.exercises[ex.id]; if (!pr && !sum.inBox[ex.id]) continue;
+      rows.push(el("tr", { class: "ex" }, el("td", { colspan: "4" }, subjChip(ex), el("a", { href: ex.path, lang: ex.lang || null }, ex.title), " ", el("span", { class: "muted", style: "font-weight:400" }, ex.level ? levelOf(ex) : ""),
+        sum.due[ex.id] ? el("span", { style: "margin-inline-start:8px;font-weight:600;color:#8a5a00" }, "🔁 " + tr("tile.due", { count: sum.due[ex.id] })) : null)));
+      for (const s of ex.sets || []) {
+        const r = (pr || {})[s.id];
+        rows.push(el("tr", null, el("td", { lang: ex.lang || null }, s.title), el("td", null, r ? n(r.runs) + "×" : "–"),
+          el("td", null, r ? el("span", { class: "pct", style: `color:${pctCol(r.best)}` }, pctText(r.best)) : el("span", { class: "muted" }, tr("tile.newShort"))),
+          el("td", null, r ? dt(r.last) : "")));
+      }
+    }
+    t.replaceChildren(...(rows.length > 1 ? rows : [el("tr", null, el("td", null, filtered ? tr("progress.noneFiltered") : tr("progress.none")))]));
+
+    const at = document.getElementById("att");
+    at.replaceChildren(el("tr", null, el("th", null, tr("table.when")), el("th", null, tr("table.exercise")), el("th", null, tr("table.set")), el("th", null, tr("table.result"))),
+      ...hist.attempts.filter(a => matches(a.exercise)).slice(0, 40).map(a => { const p = Math.round(100 * a.correct / a.total);
+        return el("tr", null, el("td", null, dt(a.ts)), el("td", null, exLabel(a.exercise)), el("td", null, setTitle(a.exercise, a.set_id) + (a.mode === "retry" ? " (" + tr("table.retry") + ")" : "")),
+          el("td", null, el("span", { class: "pct", style: `color:${pctCol(p)}` }, `${n(a.correct)}/${n(a.total)} (${pctText(p)})`))); }));
+
+    const wr = document.getElementById("wrong");
+    wr.replaceChildren(el("tr", null, el("th", null, tr("table.when")), el("th", null, tr("table.exercise")), el("th", null, tr("table.question"))),
+      ...hist.wrong.filter(w => matches(w.exercise)).map(w => el("tr", null, el("td", null, dt(w.ts)), el("td", null, exLabel(w.exercise)), el("td", null, w.question))));
+  }
+  load();
+})();
+</script>
+<script src="version.js"></script>
+</body>
+</html>

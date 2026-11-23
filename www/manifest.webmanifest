@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Family Campus",
+  "short_name": "Campus",
+  "description": "Üben für die nächsten Prüfungen, repetieren und Lücken schliessen.",
+  "lang": "de-CH",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f4ff",
+  "theme_color": "#6b4eff",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

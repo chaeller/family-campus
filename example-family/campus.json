@@ -1,0 +1,117 @@
+{
+ "_comment": "Example campus with an invented family. Copy this folder to start your own campus.",
+ "name": "Family Campus",
+ "prefix": "/",
+ "locales": [
+  "en",
+  "de-DE",
+  "de-CH"
+ ],
+ "defaultLocale": "en",
+ "currency": "EUR",
+ "subjects": {},
+ "categories": [
+  {
+   "id": "school",
+   "areas": [
+    {
+     "id": "school",
+     "name": {
+      "en": "School",
+      "de": "Schule"
+     },
+     "levelOnly": true,
+     "levels": [
+      {
+       "id": "year5",
+       "name": {
+        "en": "Year 5",
+        "de": "Klasse 5"
+       }
+      },
+      {
+       "id": "year6",
+       "name": {
+        "en": "Year 6",
+        "de": "Klasse 6"
+       }
+      },
+      {
+       "id": "year7",
+       "name": {
+        "en": "Year 7",
+        "de": "Klasse 7"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "vocational",
+   "areas": [
+    {
+     "id": "carpenter",
+     "name": {
+      "en": "Carpenter",
+      "de": "Schreiner"
+     },
+     "short": {
+      "en": "Carpenter",
+      "de": "Schreiner"
+     },
+     "levels": [
+      {
+       "id": "y1",
+       "name": {
+        "en": "1st year",
+        "de": "1. Lehrjahr"
+       }
+      },
+      {
+       "id": "y2",
+       "name": {
+        "en": "2nd year",
+        "de": "2. Lehrjahr"
+       }
+      },
+      {
+       "id": "y3",
+       "name": {
+        "en": "3rd year",
+        "de": "3. Lehrjahr"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "people": {
+  "Anna": {
+   "color": "#e64980",
+   "area": "school",
+   "level": "year6",
+   "focus": [
+    {
+     "exercise": "demo-internet-basics",
+     "reason": {
+      "en": "Basics for the next test",
+      "de": "Grundlagen für den nächsten Test"
+     }
+    }
+   ]
+  },
+  "Ben": {
+   "color": "#2f9e44",
+   "area": "carpenter",
+   "level": "y2"
+  },
+  "Mia": {
+   "color": "#9c36b5",
+   "area": "software",
+   "level": null,
+   "admin": true
+  }
+ }
+}

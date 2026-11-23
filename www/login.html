@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family Campus</title>
+<link rel="icon" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="i18n.js"></script>
+<script src="people.js"></script>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#6b4eff">
+<style>
+:root{--bg:#f6f4ff;--card:#fff;--ink:#26233a;--muted:#6c6886;--line:#e4e0f5;--accent:#6b4eff;--bad:#d64545}
+@media (prefers-color-scheme: dark){:root{--bg:#16141f;--card:#211e2e;--ink:#ece9f7;--muted:#a39fbb;--line:#332f45;--accent:#8b72ff}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px}
+main{max-width:400px;margin:0 auto;padding:48px 16px}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+h1{font-size:1.6rem;margin:0}
+form{background:var(--card);border-radius:18px;padding:22px;box-shadow:0 2px 0 var(--line),0 6px 22px rgba(60,40,140,.08);display:grid;gap:14px}
+label{display:grid;gap:6px;font-weight:600;font-size:.95rem}
+input{font:inherit;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:transparent;color:inherit;min-height:48px}
+input:focus{outline:none;border-color:var(--accent)}
+button{font:inherit;font-weight:700;border:none;border-radius:14px;padding:12px;background:var(--accent);color:#fff;min-height:48px;cursor:pointer}
+button:disabled{opacity:.6}
+.err{color:var(--bad);font-weight:600;min-height:1.2em;margin:0}
+.names{display:flex;flex-wrap:wrap;gap:8px}
+.langs{display:flex;justify-content:center;margin-top:18px;font-size:.85rem;font-weight:600}
+.langs select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px 8px;min-height:36px;cursor:pointer}
+.name-field.auto{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* each name in the person's colour: light tint, full colour when chosen */
+.names button{background:color-mix(in srgb, var(--c) 14%, var(--card));color:var(--c);font-weight:700;padding:8px 14px;min-height:40px;border:2px solid transparent}
+.names button.sel{background:var(--c);color:var(--c-text);border-color:var(--c)}
+</style>
+</head>
+<body>
+<main>
+  <div class="logo">
+    <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#6b4eff"/><g fill="#fff"><circle cx="19" cy="22" r="6.5"/><circle cx="45" cy="22" r="6.5"/><circle cx="32" cy="27" r="5.5"/><path d="M8 40a11 10 0 0 1 22 0zM34 40a11 10 0 0 1 22 0zM23 41a9 8 0 0 1 18 0z" opacity=".8"/></g><path d="M8 41q12-5 24 1q12-6 24-1v12q-12-5-24 1q-12-6-24-1z" fill="#fff" stroke="#6b4eff" stroke-width="3" stroke-linejoin="round"/><path d="M32 42v12" stroke="#6b4eff" stroke-width="2.5"/></svg>
+    <h1>Family Campus</h1>
+  </div>
+  <form id="f">
+    <div>
+      <div style="font-weight:600;font-size:.95rem;margin-bottom:6px" data-i18n="login.who"></div>
+      <div class="names" id="names"></div>
+    </div>
+    <!-- filled by the name buttons; hidden but kept so that browsers save the password per person.
+         Shown only if the buttons are missing (people.js not loaded). -->
+    <label class="name-field" id="name-field"><span data-i18n="login.name"></span> <input id="name" name="username" autocomplete="username" required></label>
+    <label><span data-i18n="login.password"></span> <input id="pw" name="password" type="password" autocomplete="current-password" required></label>
+    <p class="err" id="err" role="alert"></p>
+    <button id="go" type="submit" data-i18n="login.submit"></button>
+  </form>
+  <div class="langs" id="langs" hidden><select id="lang" data-i18n-attr="aria-label:account.language"></select></div>
+</main>
+<script>
+I18n.ready.then(() => {
+document.title = I18n.t("login.title") + " – Family Campus";
+// language choice before login (a dropdown, only when my-family offers more than one locale); kept in this browser
+if (I18n.locales.length > 1) {
+  const sel = document.getElementById("lang");
+  I18n.locales.forEach(tag => { const o = document.createElement("option"); o.value = tag; o.lang = tag; o.textContent = I18n.nameOf(tag);
+    o.selected = tag === I18n.locale; sel.append(o); });
+  sel.addEventListener("change", () => I18n.setLocale(sel.value));
+  document.getElementById("langs").hidden = false;
+}
+const NAMES = window.CampusPeople ? CampusPeople.names : [];
+if (NAMES.length) { document.getElementById("name-field").classList.add("auto"); document.getElementById("name").required = false; }   // the buttons replace the field
+const nameIn = document.getElementById("name"), pw = document.getElementById("pw"), err = document.getElementById("err"), go = document.getElementById("go");
+const box = document.getElementById("names");
+NAMES.forEach(n => { const b = CampusPeople.paint(document.createElement("button"), n); b.type = "button"; b.textContent = n;
+  b.onclick = () => { nameIn.value = n; box.querySelectorAll("button").forEach(x => x.classList.toggle("sel", x === b)); pw.focus(); }; box.append(b); });
+try { const last = localStorage.getItem("campus-last-user"); if (last) { nameIn.value = last; [...box.children].forEach(b => b.classList.toggle("sel", b.textContent === last)); } } catch (e) {}
+document.getElementById("f").addEventListener("submit", async e => {
+  e.preventDefault(); err.textContent = "";
+  if (!nameIn.value.trim()) { err.textContent = I18n.t("login.pickName"); return; }
+  go.disabled = true;
+  try {
+    const r = await fetch("api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nameIn.value.trim(), password: pw.value, locale: I18n.chosen || undefined }) });   // only a choice made by hand
+    const d = await r.json();
+    if (!r.ok) { err.textContent = I18n.t("error." + (d.error || "login_failed")); pw.select(); return; }
+    try { localStorage.setItem("campus-last-user", d.name); localStorage.removeItem("campus-filter-" + d.name); } catch (e) {}
+    const next = new URLSearchParams(location.search).get("next") || "";
+    location.href = /^\/(?!\/)[\w\-./]*$/.test(next) && !next.endsWith("login.html") ? next : "./";
+  } catch (e) { err.textContent = I18n.t("error.offline"); }
+  finally { go.disabled = false; }
+});
+});
+</script>
+<script src="version.js"></script>
+</body>
+</html>

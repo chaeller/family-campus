@@ -1,0 +1,16 @@
+.git
+.gitignore
+.claude
+archive
+*.md
+*.log
+.env*
+fotos
+material*
+secrets
+data
+tools
+docs
+deploy
+campus.env*
+server/__pycache__
