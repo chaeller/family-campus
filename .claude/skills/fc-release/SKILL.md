@@ -50,10 +50,15 @@ Propose the next version (patch for fixes, minor for new features, per
 `docs/operations.md` ("Releasing Family Campus"):
 
 - `VERSION`: new version and today's date (two lines);
-- `CHANGELOG.md`: a section `## <version> – <date>` below "Unreleased" with the
-  changes (for developers, English);
-- `release-notes.json`: a new first entry of `"versions"` with short notes for
-  learners in `en` and `de` (what they notice; empty `"unreleased"` afterwards);
+- `CHANGELOG.md`: a section `## <version> – <date>` below "Unreleased"; **move**
+  the entries of "Unreleased" into it (it stays as an empty heading), then compare
+  with `git log v<previous>..HEAD` and the uncommitted diff and add what is
+  missing (for developers, English);
+- `release-notes.json`: a new first entry of `"versions"` – **move** the notes of
+  `"unreleased"` into it and add what learners notice that is missing (`en` and
+  `de`); `"unreleased"` is empty afterwards. Changes nobody notices (skills, docs,
+  tools) need no learner note, but a version needs at least one note in `en` and
+  `de` – if there is none, say so and propose a short one;
 - `my-family/deploy.env`: `FC_APP_VERSION=<version>`;
 - run `python3 tools/check_i18n.py`, `python3 tools/build.py` (example family) and
   `tools/campus-build.sh`.

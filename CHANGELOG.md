@@ -6,6 +6,14 @@ All notable changes to Family Campus are recorded here. The format follows
 
 ## Unreleased
 
+### Changed
+
+- `fc-release` detects changes in Family Campus (uncommitted, or commits after its tag) and prepares
+  the next version before the my-family release; it hands over the commands in the order the image
+  needs (Family Campus commit, tag and push, then my-family, then the image), warns when a release
+  name would repeat and asks before creating a GitHub release. `docs/operations.md` describes the
+  order for changes in both.
+
 ## 1.0.1 – 2026-11-23
 
 ### Fixed

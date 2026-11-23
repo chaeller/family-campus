@@ -19,6 +19,14 @@ changes and do not contradict an accepted ADR silently.
 - **The user commits, pushes and releases himself.** Never run
   `git commit`, `git push`, `git tag` or `docker push` unless explicitly
   asked in the current request.
+- **Every change to Family Campus is recorded where it is made**, before it is
+  committed: a line under `## Unreleased` in `CHANGELOG.md` (English, for
+  developers; also skills, docs and tools), and – if learners notice it – a
+  short note in `"unreleased"` of `release-notes.json` (`en` and `de`). Check
+  this before every commit of Family Campus (`git diff --cached --stat`: a
+  change without a `CHANGELOG.md` line is incomplete). A new version moves the
+  entries into its own section (`fc-release`, step 1b); `publish_check.sh`
+  refuses unreleased entries, so nothing is pushed without a version.
 - No tiles **in this repository** built from teachers' worksheets, dossiers
   or books (copyright): only generated content or content from
   official/primary sources, with the sources named in the summary sheet.
