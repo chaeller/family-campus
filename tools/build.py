@@ -86,6 +86,15 @@ own_tiles = load(os.path.join(inst_dir, "tiles.json"), [])
 build_tiles(app_tiles, os.path.join(APP, "content"))
 build_tiles(own_tiles, os.path.join(inst_dir, "tiles"))
 
+# ---- page language from the first byte on: the browser decides whether to offer a translation before
+# i18n.js has loaded the catalogue, so <html lang> must not say "en" on a German campus. The page carries the
+# campus default and the offered locales; i18n.js corrects lang synchronously to the person's locale.
+locs = inst.get("locales", ["en"]); html_tag = f'<html lang="{html.escape(inst.get("defaultLocale", locs[0]))}" data-locales="{html.escape(" ".join(locs))}">'
+for page in ["login.html", "index.html", "progress.html"] + [os.path.join("exercises", t["id"], "index.html") for t in app_tiles + own_tiles]:
+    f = os.path.join(out, page); s = open(f, encoding="utf-8").read()
+    assert '<html lang="en">' in s, f"{page}: <html lang=\"en\"> not found"
+    open(f, "w", encoding="utf-8").write(s.replace('<html lang="en">', html_tag, 1))
+
 exercises = []
 for t in app_tiles + own_tiles:
     ex = {k: v for k, v in t.items() if k not in ("module", "extension", "css", "cover")}

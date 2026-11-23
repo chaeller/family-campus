@@ -9,9 +9,18 @@ usual Swiss quotes «…» – „…“ would be correct too –, Swiss terms).
 
 1. The person's choice (account menu → language), stored on the server and
    valid on all their devices.
-2. Before login, or without a choice: the browser's languages, matched
-   against the locales my-family offers (`de-AT` → a `de` locale).
+2. Before login, or without a choice: the browser's languages in their
+   order, matched against the locales my-family offers – per language first
+   the exact tag, then the same language (`de-AT` → a `de` locale). A later
+   exact match does not win over an earlier language: `de-DE, en` on a
+   `de-CH`/`en` campus gives `de-CH`.
 3. my-family's `defaultLocale`, then `en`.
+
+The built pages start with `<html lang>` set to my-family's `defaultLocale`
+and list the offered locales (`data-locales`); `i18n.js` sets `lang` to the
+locale of this browser before anything is loaded. Browsers decide early
+whether to offer a translation, so the page must never announce the wrong
+language.
 
 A choice on the login page's switcher becomes the person's choice at the
 first login if they have none yet.

@@ -22,14 +22,26 @@
     for (let i = parts.length; i > 0; i--) out.push(parts.slice(0, i).join("-"));
     if (!out.includes("en")) out.push("en"); return out; };
 
-  // first wish that the campus offers: exact tag, else same language (de-AT → de-CH), else nothing
+  // the first wish (in the order of the wishes) that the campus offers: per wish the exact tag, else the
+  // same language (de-AT → de-CH); else nothing. A later exact match never beats an earlier wish:
+  // ["de-DE", "de", "en"] on a de-CH/en campus gives de-CH, not en.
   function negotiate(wishes, offered) {
     const low = offered.map(o => o.toLowerCase());
-    for (const w of wishes.filter(Boolean)) { const i = low.indexOf(w.toLowerCase()); if (i >= 0) return offered[i]; }
-    for (const w of wishes.filter(Boolean)) { const lang = w.split("-")[0].toLowerCase();
-      const i = low.findIndex(o => o.split("-")[0] === lang); if (i >= 0) return offered[i]; }
+    for (const w of wishes.filter(Boolean)) {
+      const i = low.indexOf(w.toLowerCase()); if (i >= 0) return offered[i];
+      const lang = w.split("-")[0].toLowerCase();
+      const j = low.findIndex(o => o.split("-")[0] === lang); if (j >= 0) return offered[j];
+    }
     return null;
   }
+
+  // set <html lang> at once, before anything is fetched: the browser decides early whether to offer a
+  // translation. The build writes the offered locales into the page (data-locales); the person's stored
+  // choice on the server is applied after /api/me (see ready).
+  const setLang = tag => { const html = document.documentElement; html.lang = tag; html.dir = RTL.includes(tag.split("-")[0]) ? "rtl" : "ltr"; };
+  { const offered = (document.documentElement.dataset.locales || "").split(" ").filter(Boolean);
+    const early = offered.length && (negotiate([store.get()], offered) || negotiate(navigator.languages || [navigator.language], offered));
+    if (early) setLang(early); }
 
   const getJSON = url => fetch(url, { credentials: "same-origin" }).then(r => r.ok ? r.json() : null).catch(() => null);
 
@@ -37,9 +49,7 @@
     const parts = await Promise.all(chain(tag).reverse().map(t => getJSON(base + "locales/" + t + ".json")));
     messages = Object.assign({}, ...parts.filter(Boolean));   // en, then de, then de-CH: the most specific wins
     locale = tag;
-    const html = document.documentElement;
-    html.lang = tag;
-    html.dir = RTL.includes(tag.split("-")[0]) ? "rtl" : "ltr";
+    setLang(tag);
   }
 
   function t(key, params) {
