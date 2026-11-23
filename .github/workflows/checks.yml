@@ -1,0 +1,35 @@
+# Checks of Family Campus on every push and pull request – the parts of tools/publish_check.sh that need
+# no private data (the private word list stays with the maintainer; run publish_check.sh before a push).
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"   # as in the Dockerfile
+      - name: Server compiles
+        run: python3 -m py_compile server/server.py
+      - name: i18n catalogues complete
+        run: python3 tools/check_i18n.py
+      - name: Build the example family
+        run: python3 tools/build.py example-family --out build/www
+      - name: de-CH writes ss, never ß
+        run: python3 tools/check_de_ch.py example-family
+      - name: Self test of every tile (headless Chromium)
+        run: |
+          # tools/selftest.py calls "chromium"; the runner ships Google Chrome
+          command -v chromium || sudo ln -s "$(command -v google-chrome)" /usr/local/bin/chromium
+          OUT=$(python3 tools/selftest.py build/www/exercises/*/index.html)
+          echo "$OUT"
+          ! echo "$OUT" | grep -v "no problems"

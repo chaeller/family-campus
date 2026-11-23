@@ -17,6 +17,22 @@ All notable changes to Family Campus are recorded here. The format follows
   build, tests – entries under "Unreleased" are allowed); `--release` additionally refuses unreleased
   entries in `CHANGELOG.md` and `release-notes.json`. `fc-release` and `docs/operations.md` use
   `--release`.
+- `tools/campus-image.sh` builds with `docker build --pull`: every image gets the current patch level
+  of the base image (`python:3.13-alpine`) instead of a cached one.
+
+### Fixed
+
+- `tools/publish_check.sh` ran the self test only when Playwright was installed, although
+  `tools/selftest.py` needs only the `chromium` command – the self test was skipped. It now runs
+  whenever `chromium` is found.
+
+### Added
+
+- GitHub Actions workflow `checks` (`.github/workflows/checks.yml`): on every push and pull request
+  the server compiles, the i18n and de-CH checks run, the example family is built and every tile
+  passes the self test in headless Chromium. The private word check stays local (`publish_check.sh`).
+- Dependabot (`.github/dependabot.yml`): monthly updates of the Docker base image and of the GitHub
+  Actions; Family Campus has no package dependencies.
 
 ## 1.0.1 – 2026-11-23
 

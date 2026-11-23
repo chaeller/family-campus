@@ -30,10 +30,14 @@ welcome.
 
 ```bash
 python3 tools/build.py                                     # example family
-python3 tools/selftest.py build/www/exercises/*/index.html # needs Playwright + Chromium
+python3 tools/selftest.py build/www/exercises/*/index.html # needs Chromium
 python3 tools/check_i18n.py
+python3 tools/check_de_ch.py example-family
 python3 -m py_compile server/server.py
 ```
+
+The same checks run on GitHub for every push and pull request
+(`.github/workflows/checks.yml`).
 
 Look at changed pages at phone width (about 400 px) and on a desktop, in
 English and German.

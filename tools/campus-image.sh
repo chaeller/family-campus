@@ -40,11 +40,11 @@ cp -r build/www "$CTX/www"
 APPREF="$FC_APP_VERSION ($(git -C "$APP" rev-parse --short HEAD 2>/dev/null || echo uncommitted))"
 ARGS=(--build-arg FC_PREFIX="$FC_PREFIX" --build-arg APP_VERSION="$APPREF" --build-arg CONTENT_DATE="$CONTENT" --build-arg COMMIT="$COMMIT")
 if [[ $DEV == 1 ]]; then
-  docker build -f "$APP/Dockerfile" "${ARGS[@]}" --tag "$REPO:dev" "$CTX"
+  docker build --pull -f "$APP/Dockerfile" "${ARGS[@]}" --tag "$REPO:dev" "$CTX"
   echo; echo "Built $REPO:dev (Family Campus $APPREF, content $CONTENT, test version). Not for release."
   echo "Push:  docker push $REPO:dev"
 else
-  docker build -f "$APP/Dockerfile" "${ARGS[@]}" --tag "$REPO:$TAG" --tag "$REPO:latest" "$CTX"
+  docker build --pull -f "$APP/Dockerfile" "${ARGS[@]}" --tag "$REPO:$TAG" --tag "$REPO:latest" "$CTX"
   echo; echo "Built $REPO:$TAG and :latest (Family Campus $APPREF, content $CONTENT, my-family commit $COMMIT)."
   echo "Push:  docker push $REPO:$TAG && docker push $REPO:latest"
   echo "Then deploy with /fc-deploy $TAG."

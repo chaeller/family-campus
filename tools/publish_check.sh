@@ -6,7 +6,7 @@
 #   (notes for learners in en and de); with --release also nothing left under "Unreleased" in either –
 #   between two versions the changes are recorded there and may be pushed;
 # - the example family builds, the i18n catalogues are complete, the server compiles,
-#   and the tiles pass the self test (if Playwright is installed).
+#   and the tiles pass the self test (if chromium is installed).
 # Private words (names of your family, domains, servers …) come from a file that is NOT part of the
 # repository, one word or phrase per line, # for comments:
 #   tools/publish_check.sh [--release] [--deny <file>]   default list: $FC_PUBLISH_DENY or .publish-deny
@@ -77,11 +77,11 @@ python3 -m py_compile server/server.py || fail "server does not compile"
 python3 tools/check_i18n.py >/dev/null || fail "i18n check (python3 tools/check_i18n.py)"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 python3 tools/build.py example-family --out "$TMP/www" >/dev/null || fail "the example family does not build"
-if python3 -c "import playwright" 2>/dev/null; then
+if command -v chromium >/dev/null; then
   BAD=$(python3 tools/selftest.py "$TMP"/www/exercises/*/index.html | grep -v "no problems" || true)
   [[ -z $BAD ]] || fail "self test: $BAD"
 else
-  echo "note: Playwright not installed – self test skipped"
+  echo "note: chromium not found – self test skipped"
 fi
 
 MODE=push; [[ $RELEASE == 1 ]] && MODE=release

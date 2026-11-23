@@ -1,0 +1,12 @@
+# Family Campus has no package dependencies (Python standard library only, no JS libraries).
+# Dependabot watches the base image of the Dockerfile and the versions of the GitHub Actions.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
