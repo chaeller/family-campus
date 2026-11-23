@@ -2,6 +2,18 @@
  "unreleased": {},
  "versions": [
   {
+   "version": "1.0.1",
+   "date": "2026-11-23",
+   "notes": {
+    "en": [
+     "The site opens in your language right away – the browser no longer offers to translate it."
+    ],
+    "de": [
+     "Die Seite erscheint gleich in deiner Sprache – der Browser bietet keine unnötige Übersetzung mehr an."
+    ]
+   }
+  },
+  {
    "version": "1.0.0",
    "date": "2026-11-22",
    "notes": {

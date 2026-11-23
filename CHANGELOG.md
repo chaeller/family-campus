@@ -6,6 +6,16 @@ All notable changes to Family Campus are recorded here. The format follows
 
 ## Unreleased
 
+## 1.0.1 – 2026-11-23
+
+### Fixed
+
+- Language before login: the browser's languages are matched in their order – per language the exact
+  tag, then the same language. `de-DE, de, en` on a `de-CH`/`en` campus now gives `de-CH`, not `en`.
+- Built pages start with `<html lang>` set to the campus default and list the offered locales;
+  `i18n.js` sets the page language before anything is loaded, so browsers no longer offer to
+  translate a page that is already in the reader's language.
+
 ## 1.0.0 – 2026-11-22
 
 First public release.
