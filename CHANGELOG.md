@@ -18,7 +18,9 @@ All notable changes to Family Campus are recorded here. The format follows
   entries in `CHANGELOG.md` and `release-notes.json`. `fc-release` and `docs/operations.md` use
   `--release`.
 - `tools/campus-image.sh` builds with `docker build --pull`: every image gets the current patch level
-  of the base image (`python:3.13-alpine`) instead of a cached one.
+  of the base image instead of a cached one.
+- Base image `python:3.13-alpine` → `python:3.15-alpine` (Dependabot #3); the CI checks run on Python
+  3.15 as well. Tested: the example family builds, the server starts and answers `healthz`.
 
 ### Fixed
 
@@ -33,6 +35,7 @@ All notable changes to Family Campus are recorded here. The format follows
   passes the self test in headless Chromium. The private word check stays local (`publish_check.sh`).
 - Dependabot (`.github/dependabot.yml`): monthly updates of the Docker base image and of the GitHub
   Actions; Family Campus has no package dependencies.
+- CI: `actions/checkout` and `actions/setup-python` updated to v7 (Dependabot #1, #2).
 
 ## 1.0.1 – 2026-11-23
 

@@ -4,7 +4,7 @@
 # login and stores progress in SQLite under /data (Docker volume).
 # Build context (tools/campus-image.sh): server/server.py and VERSION of Family Campus, the site built
 # from Family Campus and my-family in www/ (its build.json holds the date of the content, ADR-0018).
-FROM python:3.13-alpine
+FROM python:3.15-alpine
 LABEL org.opencontainers.image.title="Family Campus"
 RUN adduser -D -H -u 10001 campus && mkdir -p /data && chown campus:campus /data
 COPY server/server.py VERSION /app/
