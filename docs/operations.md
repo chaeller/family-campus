@@ -101,13 +101,37 @@ After an update of Family Campus (`git pull`) set `FC_APP_VERSION` in
 
 Family Campus has the only version: `VERSION`, `CHANGELOG.md` (for
 developers) and `release-notes.json` (for learners, at least `en` and `de`).
-Before a release run
-`tools/publish_check.sh --deny <file>`: it checks every file that would be
-committed against a list of private words kept **outside** the repository
-(names, domains, servers of your family), looks for secrets and databases,
-checks LICENSE, README, changelog and release notes, builds the example
-family, runs the i18n check and the self test. Then tag `v<version>`. Each
-my-family moves to the new version by changing `FC_APP_VERSION`.
+For a release:
+
+1. Set the new version and today's date in `VERSION`; in `CHANGELOG.md` turn
+   "Unreleased" into `## <version> – <date>`; in `release-notes.json` move the
+   notes of `"unreleased"` into a new first entry of `"versions"`.
+2. Run the checks:
+
+   ```bash
+   tools/publish_check.sh --deny <file>
+   ```
+
+   It checks every file that would be committed against a list of private
+   words kept **outside** the repository (names, domains, servers of your
+   family), looks for secrets and databases, checks LICENSE, README,
+   changelog and release notes, builds the example family, runs the i18n
+   check and the self test.
+3. Commit, tag and push, then create the GitHub release with the notes of
+   this version from `CHANGELOG.md` (here for 1.0.0):
+
+   ```bash
+   V=1.0.0
+   git add -A && git commit -m "Family Campus $V"
+   git tag -a v$V -m "Family Campus $V"
+   git push && git push origin v$V
+   awk -v v="$V" '$0 ~ "^## " v " " {f=1; next} /^## /{f=0} f' CHANGELOG.md \
+     | gh release create v$V --verify-tag --title "Family Campus $V" --notes-file -
+   gh release view v$V --web     # look at it
+   ```
+
+Each my-family moves to the new version by changing `FC_APP_VERSION` in its
+`deploy.env` (see "Releases" above).
 
 ## Checks
 
