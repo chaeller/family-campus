@@ -28,8 +28,10 @@ jobs:
         run: python3 tools/check_de_ch.py example-family
       - name: Self test of every tile (headless Chromium)
         run: |
-          # tools/selftest.py calls "chromium"; the runner ships Google Chrome
-          command -v chromium || sudo ln -s "$(command -v google-chrome)" /usr/local/bin/chromium
+          # tools/selftest.py calls "chromium". The runner's /usr/bin/chromium is a snap that cannot read
+          # the test page in /tmp – use the preinstalled Google Chrome instead (/usr/local/bin comes first)
+          sudo ln -sf "$(command -v google-chrome)" /usr/local/bin/chromium
+          chromium --version
           OUT=$(python3 tools/selftest.py build/www/exercises/*/index.html)
           echo "$OUT"
           ! echo "$OUT" | grep -v "no problems"
