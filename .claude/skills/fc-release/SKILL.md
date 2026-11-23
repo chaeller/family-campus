@@ -68,7 +68,7 @@ before my-family, because the image needs both committed):
 
 ```bash
 # 1. Family Campus (this folder) – version files are part of the same commit
-tools/publish_check.sh --deny <private word list outside the repo>
+tools/publish_check.sh --release --deny <private word list outside the repo>
 git add -A && git commit -m "Family Campus <version>: <what changed>"
 git tag -a v<version> -m "Family Campus <version>"
 git push && git push origin v<version>
@@ -117,7 +117,7 @@ Then: "Install with `/fc-deploy <version>-<date>`."
    (step 1b) also: its version, its changed files and that it will be committed,
    tagged and pushed to its public remote. Options: carry out the release /
    cancel. Anything but the first option: stop.
-2. Only with a Family Campus version (1b): `tools/publish_check.sh --deny <list>`
+2. Only with a Family Campus version (1b): `tools/publish_check.sh --release --deny <list>`
    (ask the user for the path of the private word list if it is not known; stop on
    any finding), then commit, `git tag -a v<version>`, push the branch and the tag
    – in that order, before my-family.

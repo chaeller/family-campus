@@ -14,8 +14,8 @@ changes and do not contradict an accepted ADR silently.
 - **No data of a real family in this repository**: no real names, colours
   per person, exams, learning goals, schools, domains, server names,
   registry hosts, logins. Examples use the invented family of `example-family/`.
-  Before every commit that will be pushed run `tools/publish_check.sh --deny
-  <private word list outside the repo>`.
+  Before every push run `tools/publish_check.sh --deny <private word list
+  outside the repo>`; before tagging a version add `--release`.
 - **The user commits, pushes and releases himself.** Never run
   `git commit`, `git push`, `git tag` or `docker push` unless explicitly
   asked in the current request.
@@ -25,8 +25,8 @@ changes and do not contradict an accepted ADR silently.
   short note in `"unreleased"` of `release-notes.json` (`en` and `de`). Check
   this before every commit of Family Campus (`git diff --cached --stat`: a
   change without a `CHANGELOG.md` line is incomplete). A new version moves the
-  entries into its own section (`fc-release`, step 1b); `publish_check.sh`
-  refuses unreleased entries, so nothing is pushed without a version.
+  entries into its own section (`fc-release`, step 1b); `publish_check.sh
+  --release` refuses unreleased entries, so no version is tagged without them.
 - No tiles **in this repository** built from teachers' worksheets, dossiers
   or books (copyright): only generated content or content from
   official/primary sources, with the sources named in the summary sheet.

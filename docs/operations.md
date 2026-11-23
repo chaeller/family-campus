@@ -117,14 +117,17 @@ For a release:
 2. Run the checks:
 
    ```bash
-   tools/publish_check.sh --deny <file>
+   tools/publish_check.sh --release --deny <file>
    ```
 
    It checks every file that would be committed against a list of private
    words kept **outside** the repository (names, domains, servers of your
    family), looks for secrets and databases, checks LICENSE, README,
    changelog and release notes, builds the example family, runs the i18n
-   check and the self test.
+   check and the self test. `--release` also refuses entries left under
+   "Unreleased". Between two versions run it without `--release` before
+   every push: the same checks, but changes recorded under "Unreleased" may
+   be pushed.
 3. Commit, tag and push, then create the GitHub release with the notes of
    this version from `CHANGELOG.md` (here for 1.0.0):
 

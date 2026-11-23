@@ -13,6 +13,10 @@ All notable changes to Family Campus are recorded here. The format follows
   needs (Family Campus commit, tag and push, then my-family, then the image), warns when a release
   name would repeat and asks before creating a GitHub release. `docs/operations.md` describes the
   order for changes in both.
+- `tools/publish_check.sh` has two modes: without options it checks a push (private words, secrets,
+  build, tests – entries under "Unreleased" are allowed); `--release` additionally refuses unreleased
+  entries in `CHANGELOG.md` and `release-notes.json`. `fc-release` and `docs/operations.md` use
+  `--release`.
 
 ## 1.0.1 – 2026-11-23
 

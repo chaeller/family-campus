@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
-# Checks the Family Campus repository before it is published (a release or the first public commit):
+# Checks the Family Campus repository before it is pushed (every push) or released (--release):
 # - every file that would be committed (tracked + untracked, not ignored) is free of private words,
 #   secrets, databases, material folders and build output;
-# - LICENSE, README.md, CHANGELOG.md with a section for VERSION and no unreleased entries; release-notes.json
-#   starts with VERSION (notes for learners in en and de);
+# - LICENSE, README.md, CHANGELOG.md with a section for VERSION; release-notes.json starts with VERSION
+#   (notes for learners in en and de); with --release also nothing left under "Unreleased" in either –
+#   between two versions the changes are recorded there and may be pushed;
 # - the example family builds, the i18n catalogues are complete, the server compiles,
 #   and the tiles pass the self test (if Playwright is installed).
 # Private words (names of your family, domains, servers …) come from a file that is NOT part of the
 # repository, one word or phrase per line, # for comments:
-#   tools/publish_check.sh [--deny <file>]        default: $FC_PUBLISH_DENY or .publish-deny
+#   tools/publish_check.sh [--release] [--deny <file>]   default list: $FC_PUBLISH_DENY or .publish-deny
+#   --release   before tagging a version (fc-release): the version has taken over all unreleased entries
 # Lines of LICENSE (the copyright holder) are not checked against the private words.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-DENY=${FC_PUBLISH_DENY:-.publish-deny}
-[[ "${1:-}" == "--deny" ]] && DENY=$2
+DENY=${FC_PUBLISH_DENY:-.publish-deny}; RELEASE=0
+while [[ $# -gt 0 ]]; do case $1 in
+  --deny) DENY=$2; shift 2 ;;
+  --release) RELEASE=1; shift ;;
+  *) echo "usage: $0 [--release] [--deny <file>]" >&2; exit 2 ;;
+esac; done
 PROBLEMS=0
 fail() { echo "PROBLEM: $*"; PROBLEMS=$((PROBLEMS+1)); }
 
@@ -53,16 +59,18 @@ else
   fail "no list of private words ($DENY) – create it outside the repository or pass --deny <file>"
 fi
 
-# 3. release state
+# 3. version state (with --release: nothing unreleased)
 [[ -f LICENSE ]] || fail "LICENSE missing"
 [[ -f README.md ]] || fail "README.md missing"
 V=$(sed -n 1p VERSION)
 grep -q "^## $V " CHANGELOG.md || fail "CHANGELOG.md has no section for $V"
-[[ -z $(awk '/^## Unreleased/{f=1;next} /^## /{f=0} f && /^- /' CHANGELOG.md) ]] || fail "CHANGELOG.md has unreleased entries"
-# release notes for learners (ADR-0018): the newest version is VERSION, nothing unreleased, en and de given
+if [[ $RELEASE == 1 ]]; then
+  [[ -z $(awk '/^## Unreleased/{f=1;next} /^## /{f=0} f && /^- /' CHANGELOG.md) ]] || fail "CHANGELOG.md has unreleased entries – move them into the section of $V"
+fi
+# release notes for learners (ADR-0018): the newest version is VERSION with en and de; --release: nothing unreleased
 python3 -I -c 'import json,sys; rn=json.load(open("release-notes.json", encoding="utf-8")); v=(rn.get("versions") or [{}])[0]
-sys.exit(any(rn.get("unreleased", {}).values()) or v.get("version") != sys.argv[1] or not all(v.get("notes", {}).get(k) for k in ("en", "de")))' "$V" \
-  || fail "release-notes.json: the first version must be $V with notes in en and de, and \"unreleased\" must be empty"
+sys.exit((sys.argv[2] == "1" and any(rn.get("unreleased", {}).values())) or v.get("version") != sys.argv[1] or not all(v.get("notes", {}).get(k) for k in ("en", "de")))' "$V" "$RELEASE" \
+  || fail "release-notes.json: the first version must be $V with notes in en and de$([[ $RELEASE == 1 ]] && echo ', and "unreleased" must be empty')"
 
 # 4. it works
 python3 -m py_compile server/server.py || fail "server does not compile"
@@ -76,4 +84,5 @@ else
   echo "note: Playwright not installed – self test skipped"
 fi
 
-if [[ $PROBLEMS -eq 0 ]]; then echo "Publish check: OK ($V)"; else echo "Publish check: $PROBLEMS problem(s)"; exit 1; fi
+MODE=push; [[ $RELEASE == 1 ]] && MODE=release
+if [[ $PROBLEMS -eq 0 ]]; then echo "Publish check ($MODE): OK ($V)"; else echo "Publish check: $PROBLEMS problem(s)"; exit 1; fi
