@@ -30,8 +30,52 @@ carry out the release (step 4); without it only hand over the commands (step 3).
   ask the user what changed). Read the diffs, not only the file names.
 - **Family Campus:** `FC_APP_VERSION` in `deploy.env` and the Family Campus
   checkout (this folder): its `VERSION` must match, its working tree must be clean
-  and committed (`campus-image.sh` refuses otherwise). Its notes for learners come
-  with the version – nothing to copy.
+  and committed, and if the tag `v<VERSION>` exists, `HEAD` must be on it
+  (`campus-image.sh` refuses otherwise). Its notes for learners come with the
+  version – nothing to copy. Check all of it now (`git status --porcelain`,
+  `git describe --tags --exact-match`, `git log v<VERSION>..HEAD`):
+  - all clean and `HEAD` on `v<FC_APP_VERSION>` → nothing to do;
+  - **changes in Family Campus** (uncommitted, or commits after its tag) → a
+    **Family Campus version comes first** (step 1b); the my-family release waits
+    for it.
+- **Same name twice:** the release is named `<FC_APP_VERSION>-<content date>`. If
+  the running image already has that name (same Family Campus version, my-family
+  committed on the same day), the new image would overwrite its tag – only with a
+  new Family Campus version or on another day the name is new. Say so.
+
+## 1b. Family Campus has changes: its version first
+
+Propose the next version (patch for fixes, minor for new features, per
+`CHANGELOG.md`) and **prepare** – only files, no git – following
+`docs/operations.md` ("Releasing Family Campus"):
+
+- `VERSION`: new version and today's date (two lines);
+- `CHANGELOG.md`: a section `## <version> – <date>` below "Unreleased" with the
+  changes (for developers, English);
+- `release-notes.json`: a new first entry of `"versions"` with short notes for
+  learners in `en` and `de` (what they notice; empty `"unreleased"` afterwards);
+- `my-family/deploy.env`: `FC_APP_VERSION=<version>`;
+- run `python3 tools/check_i18n.py`, `python3 tools/build.py` (example family) and
+  `tools/campus-build.sh`.
+
+The order of the commands matters – hand them over exactly so (Family Campus
+before my-family, because the image needs both committed):
+
+```bash
+# 1. Family Campus (this folder) – version files are part of the same commit
+tools/publish_check.sh --deny <private word list outside the repo>
+git add -A && git commit -m "Family Campus <version>: <what changed>"
+git tag -a v<version> -m "Family Campus <version>"
+git push && git push origin v<version>
+# 2. my-family – content and FC_APP_VERSION in one commit
+git -C my-family add -A && git -C my-family commit -m "<what changed>; Family Campus <version>" && git -C my-family push
+# 3. image
+tools/campus-image.sh
+docker push $FC_IMAGE:<version>-<date> && docker push $FC_IMAGE:latest
+```
+
+Then ask whether a **GitHub release** should be created for `v<version>` (not
+every version gets one; command in `docs/operations.md`). Only after a yes.
 
 ## 2. Fill the gaps and check
 
@@ -64,14 +108,21 @@ Then: "Install with `/fc-deploy <version>-<date>`."
 1. **Confirm in the chat** with AskUserQuestion, standing on its own: the name of
    the release, the new and improved tiles with their notes, the files that reach
    the site, and every other uncommitted file that `git -C my-family add -A` would
-   include (`git -C my-family status --porcelain`). Options: carry out the release /
+   include (`git -C my-family status --porcelain`). With a Family Campus version
+   (step 1b) also: its version, its changed files and that it will be committed,
+   tagged and pushed to its public remote. Options: carry out the release /
    cancel. Anything but the first option: stop.
-2. If my-family is its own repository: `git -C my-family add -A && git -C my-family commit -m "<what changed>"`
+2. Only with a Family Campus version (1b): `tools/publish_check.sh --deny <list>`
+   (ask the user for the path of the private word list if it is not known; stop on
+   any finding), then commit, `git tag -a v<version>`, push the branch and the tag
+   – in that order, before my-family.
+3. If my-family is its own repository: `git -C my-family add -A && git -C my-family commit -m "<what changed>"`
    – with the attribution lines the session asks for; check first that
    `git -C my-family status` lists nothing from material folders, `data/` or secrets
    (`.env`, `campus.env`). Then `git -C my-family push` (if it has a remote).
-3. `tools/campus-image.sh`, then push `$FC_IMAGE:<version>-<date>` and `:latest`.
-4. Report what was done (commit, image tag and digest) and ask whether to install
+4. `tools/campus-image.sh`, then push `$FC_IMAGE:<version>-<date>` and `:latest`.
+5. Report what was done (commits, tag, image tag and digest), ask about a GitHub
+   release if a Family Campus version was tagged, and ask whether to install
    now (`/fc-deploy <version>-<date>`); do not deploy without that answer.
 
 If a step fails, stop and report the exact error. Never force-push, never

@@ -97,6 +97,14 @@ docker push $FC_IMAGE:<version>-<date> && docker push $FC_IMAGE:latest
 After an update of Family Campus (`git pull`) set `FC_APP_VERSION` in
 `deploy.env` to its new `VERSION`; its notes for learners come with it.
 
+**Changes in both at once** (a fix in Family Campus and new content in
+my-family): Family Campus gets a new version **first** – the image needs both
+committed, and Family Campus on its tag. Order: version files (`VERSION`,
+`CHANGELOG.md`, `release-notes.json`) and `FC_APP_VERSION` in `deploy.env` →
+publish check, commit, tag and push Family Campus → commit and push my-family →
+`campus-image.sh` → push the image → install. The skill `fc-release` prepares the
+files and hands over (or, with `--run`, carries out) exactly this order.
+
 ## Releasing Family Campus
 
 Family Campus has the only version: `VERSION`, `CHANGELOG.md` (for
