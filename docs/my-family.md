@@ -126,6 +126,13 @@ when it exists; without it they ask. Plain Markdown, one section per area
 
 See `example-family/curricula.md`.
 
+## feedback.json
+
+Written by `tools/campus-feedback.sh`: the questions learners reported on the
+live site (ADR-0019), with names and their comments – it stays in my-family.
+`/fc-feedback` adds `handled` (date, outcome, what was done) to each report it
+processed; the script keeps that field when it fetches again.
+
 ## What's new? and the version
 
 my-family has no version, changelog or release notes of its own (ADR-0018).

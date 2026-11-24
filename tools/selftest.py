@@ -2,7 +2,7 @@
 and checks content consistency. Usage: python3 selftest.py <index.html>..."""
 import sys, subprocess, re, os, tempfile
 
-CAMPUS_STUB = """<script>window.Campus={progress:()=>({}),setProgress(){},answer(){},result(){},repeatCard:()=>null,init(){},start(){}};
+CAMPUS_STUB = """<script>window.Campus={progress:()=>({}),setProgress(){},answer(){},result(){},flagged:()=>false,report:()=>Promise.resolve(true),repeatCard:()=>null,init(){},start(){}};
 window.I18n={t:k=>k,has:()=>true,name:v=>v,percent:x=>Math.round(x*100)+" %",number:x=>String(x),date:x=>String(x),time:x=>String(x),days:n=>String(n),locale:"en",locales:["en"],ready:Promise.resolve({})};</script>"""
 PROBE = r'''
 window.onerror=(m,src,l)=>{document.body.setAttribute("data-test","ERR "+m+" @"+l)};

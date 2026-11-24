@@ -4,10 +4,10 @@
 (function () {
   const base = location.pathname.replace(/\/exercises\/[^/]+\/.*$/, "/").replace(/[^/]*$/, "");
   const ex = (location.pathname.match(/\/exercises\/([^/]+)\//) || [])[1] || "";
-  let progress = {}, due = 0;
+  let progress = {}, due = 0, flags = new Set();   // flags: keys of questions reported during the running release (ADR-0019)
 
   async function api(path, body) {
-    const r = await fetch(base + "api/" + path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), credentials: "same-origin" } : { credentials: "same-origin" });
+    const r = await fetch(base + "api/" + path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), credentials: "same-origin", keepalive: true } : { credentials: "same-origin" });
     if (r.status === 401) { location.href = base + "login.html?next=" + encodeURIComponent(location.pathname); throw new Error("login"); }
     return r.json();
   }
@@ -23,21 +23,31 @@
   const solText = q => { const v = q.sol || (q.a && q.a[0]) || (q.o && q.o[0]) || (q.items && q.items.map(i => i[0] + " → " + i[1]).join(", ")) || (q.steps && q.steps.join(" → ")) || (q.pairs && q.pairs.map(p => p[0] + " – " + p[1]).join(", ")) || "";
     return v ? "  ⟶ ✓ " + plain(String(v)).slice(0, 160) : ""; };   // stored as data: no words, only the sign
   const clean = q => { const c = {}; for (const k in q) if (!k.startsWith("__")) c[k] = q[k]; return c; };
+  const setIdOf = (set, q) => set.id === "__repeat" ? (q.__set || "?") : set.id;
+  const keyFor = (set, q) => q.__key || keyOf(setIdOf(set, q), q);
+  const modeOf = (set, isRetry) => set.id === "__repeat" ? "repeat" : isRetry ? "retry" : "normal";
   const fromServer = sets => { const p = {}; for (const [k, v] of Object.entries(sets || {})) p[k] = { best: v.best, runs: v.runs }; return p; };
 
   window.Campus = {
     ex,
     async init() {
-      try { const d = await api("progress?ex=" + encodeURIComponent(ex)); progress = fromServer(d.sets); due = d.due || 0; }
+      try { const d = await api("progress?ex=" + encodeURIComponent(ex)); progress = fromServer(d.sets); due = d.due || 0; flags = new Set(d.flags || []); }
       catch (e) { if (e.message === "login") return new Promise(() => {}); }
     },
     progress: () => progress,
     setProgress(d) { const p = {}; for (const k in d) if (!k.startsWith("__")) p[k] = d[k]; progress = p; },
     answer(mod, set, q, ok, isRetry) {
-      const repeat = set.id === "__repeat";
-      const setId = repeat ? (q.__set || "?") : set.id;
-      api("answer", { ex, set: setId, key: q.__key || keyOf(setId, q), ok, mode: repeat ? "repeat" : isRetry ? "retry" : "normal", q: clean(q), text: plain(q.q) + solText(q) })
+      api("answer", { ex, set: setIdOf(set, q), key: keyFor(set, q), ok, mode: modeOf(set, isRetry), q: clean(q), text: plain(q.q) + solText(q) })
         .then(d => { due = d.due; }).catch(() => {});
+    },
+    // reported during the running release (by anybody): shown with a flag and can be skipped
+    flagged: (set, q) => flags.has(keyFor(set, q)),
+    // report a question; its answer is not stored (the engine does not send it)
+    report(set, q, { reason, note, given, ok, isRetry }) {
+      flags.add(keyFor(set, q));
+      return api("report", { ex, set: setIdOf(set, q), key: keyFor(set, q), reason, note, given, ok, mode: modeOf(set, isRetry),
+                             q: clean(q), text: plain(q.q) + solText(q) })
+        .then(d => { flags = new Set(d.flags || [...flags]); return true; }).catch(() => false);
     },
     result(set, right, total, isRetry) {
       const repeat = set.id === "__repeat";

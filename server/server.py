@@ -28,6 +28,8 @@ RELEASE_DATE = _vl[1] if len(_vl) > 1 else ""
 PREFIX = "/" + os.environ.get("FC_PREFIX", "").strip("/") if os.environ.get("FC_PREFIX", "").strip("/") else ""
 SESSION_DAYS = 120
 BOX_DAYS = {1: 1, 2: 3, 3: 7, 4: 14, 5: 30}   # repetition box (Lernkartei): days until due after a right answer in box n
+# reasons a learner can pick when reporting a question (ADR-0019); the texts are in the locales (report.<reason>)
+REPORT_REASONS = ("wrongSolution", "rightAnswer", "unclear", "typo", "other")
 # Reachable without login. The web app manifest and its icons must be public: Chrome loads them
 # without cookies when it checks whether the site can be installed as an app.
 PUBLIC = {"/login.html", "/login.css", "/favicon.svg", "/version.js", "/people.js", "/manifest.webmanifest",
@@ -73,6 +75,11 @@ CREATE TABLE IF NOT EXISTS review (
   PRIMARY KEY (user_id, exercise, qkey));
 CREATE INDEX IF NOT EXISTS answers_user ON answers(user_id, ts);
 CREATE INDEX IF NOT EXISTS attempts_user ON attempts(user_id, exercise, set_id);
+CREATE TABLE IF NOT EXISTS feedback (
+  id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, exercise TEXT NOT NULL, set_id TEXT NOT NULL, qkey TEXT NOT NULL,
+  reason TEXT NOT NULL, note TEXT NOT NULL, question TEXT NOT NULL, qjson TEXT NOT NULL, given TEXT NOT NULL,
+  ok INTEGER, mode TEXT NOT NULL, build TEXT NOT NULL, ts TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS feedback_build ON feedback(build, exercise);
 CREATE TABLE IF NOT EXISTS mastered (
   user_id INTEGER NOT NULL, exercise TEXT NOT NULL, qkey TEXT NOT NULL, ts TEXT NOT NULL,
   PRIMARY KEY (user_id, exercise, qkey));
@@ -147,6 +154,9 @@ class App:
         bj = os.path.join(self.www, "build.json")
         self.build = json.load(open(bj, encoding="utf-8")) if os.path.exists(bj) else {}
         self.build = {"version": VERSION, "date": RELEASE_DATE, "content": "", "dev": False, **self.build}
+        # the running release: a reported question is flagged only while this release runs (ADR-0019)
+        self.stamp = "{}-{}{}{}".format(self.build.get("version") or VERSION, self.build.get("content") or "",
+                                        "@" + self.build["commit"] if self.build.get("commit") else "", "+dev" if self.build.get("dev") else "")
         os.makedirs(data, exist_ok=True)
         self.db = DB(os.path.join(data, "campus.sqlite"))
         # campus logins: <data>/campus.env (in the Docker volume); environment variables take precedence
@@ -257,6 +267,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.json({"ok": True, "locale": loc})
         if path == "/api/answer": return self.answer(u, data)
         if path == "/api/result": return self.result(u, data)
+        if path == "/api/report": return self.report(u, data)
         return self.json({"error": "not found"}, 404)
 
     # ---- static files
@@ -329,7 +340,13 @@ class Handler(BaseHTTPRequestHandler):
         if not t: return self.json({"error": "forbidden"}, 403)
         if path == "/api/progress":
             ex = (qs.get("ex") or [""])[0]
-            return self.json({"sets": self.sets_progress(t["id"], ex), "due": self.due(t["id"], ex)})
+            return self.json({"sets": self.sets_progress(t["id"], ex), "due": self.due(t["id"], ex), "flags": self.flags(ex)})
+        if path == "/api/reports":   # parents only: every report with its note (ADR-0019)
+            if not u["admin"]: return self.json({"error": "forbidden"}, 403)
+            rows = db.q("""SELECT f.id, u.name user, f.exercise, f.set_id, f.reason, f.note, f.question, f.given, f.ok, f.mode,
+                                  f.build, f.ts FROM feedback f JOIN users u ON u.id=f.user_id ORDER BY f.ts DESC LIMIT 300""")
+            return self.json({"build": self.app.stamp,
+                              "reports": [dict(r, active=r["build"] == self.app.stamp) for r in rows]})
         if path == "/api/summary":
             rows = db.q("""SELECT exercise, set_id, COUNT(*) runs, MAX(100*correct/MAX(total,1)) best, MAX(ts) last
                            FROM attempts WHERE user_id=? AND mode!='repeat' GROUP BY exercise, set_id""", (t["id"],))
@@ -370,6 +387,30 @@ class Handler(BaseHTTPRequestHandler):
 
     def due(self, uid, ex):
         return self.app.db.q("SELECT COUNT(*) n FROM review WHERE user_id=? AND exercise=? AND due<=?", (uid, ex, today().isoformat()))[0]["n"]
+
+    def flags(self, ex):
+        """Keys of the questions of a tile reported while the running release is live – flagged for everybody."""
+        return [r["qkey"] for r in self.app.db.q("SELECT DISTINCT qkey FROM feedback WHERE exercise=? AND build=?",
+                                                  (ex, self.app.stamp))]
+
+    def report(self, u, d):
+        """A learner reports a question (ADR-0019). The answer to it is not stored, so it counts neither as right
+        nor as wrong; the question is flagged for everybody until the next release."""
+        try:
+            ex, set_id, key = str(d["ex"])[:80], str(d["set"])[:40], str(d["key"])[:64]
+            reason = str(d["reason"])
+            if reason not in REPORT_REASONS: raise ValueError(reason)
+            note = str(d.get("note") or "").strip()[:1000]
+            ok = None if d.get("ok") is None else int(bool(d["ok"]))
+            mode = d.get("mode") if d.get("mode") in ("normal", "retry", "repeat") else "normal"
+            qjson = json.dumps(d.get("q") or {}, ensure_ascii=False)[:200_000]
+            text, given = str(d.get("text", ""))[:500], str(d.get("given", ""))[:500]
+        except Exception:
+            return self.json({"error": "bad request"}, 400)
+        self.app.db.x("""INSERT INTO feedback(user_id,exercise,set_id,qkey,reason,note,question,qjson,given,ok,mode,build,ts)
+                         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                      (u["id"], ex, set_id, key, reason, note, text, qjson, given, ok, mode, self.app.stamp, now()))
+        return self.json({"ok": True, "flags": self.flags(ex)})
 
     def answer(self, u, d):
         try:

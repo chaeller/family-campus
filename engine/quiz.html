@@ -68,6 +68,14 @@ input.txt.bad{border-color:var(--bad);background:var(--badbg)}
 .fb.ok{background:var(--okbg)}
 .fb.bad{background:var(--badbg)}
 .fb b{font-size:1.1rem}
+/* reporting a question (ADR-0019) */
+.flagnote{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;border-radius:12px;background:#fff4e6;color:#8a4b00;font-size:.92rem}
+.flagnote span{flex:1}
+.reportlink{margin-top:10px;font-size:.9rem}
+.report{margin-top:12px;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--card,#fff)}
+.report .reasons{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.report .reasons .opt{min-height:40px;padding:8px 12px;flex:0 1 auto}
+.report textarea{width:100%;min-height:64px;font:inherit;padding:8px;border-radius:10px;border:2px solid var(--line);background:transparent;color:inherit;box-sizing:border-box}
 table.t{border-collapse:collapse;width:100%;font-size:.95rem;margin:8px 0}
 table.t th,table.t td{border:1px solid var(--line);padding:7px 8px;text-align:start;vertical-align:top}
 table.t th{background:#f1eefc}
@@ -121,7 +129,7 @@ const store = { get(){ return Campus.progress(); }, set(d){ Campus.setProgress(d
 const MODULES = [];
 
 /* ============================ Navigation ============================ */
-let current = null; // {mod, set, qs, idx, right, wrong}
+let current = null; // {mod, set, qs, idx, right, wrong, skipped, pending}
 function go(view, arg){ window.scrollTo(0,0); app.innerHTML=""; VIEWS[view](arg); }
 function back(label, fn){ return h("button",{class:"btn ghost",onclick:fn},"← "+label); }
 
@@ -161,15 +169,22 @@ const VIEWS = {
   app.append(h("div",{class:"row"}, h("button",{class:"btn",onclick:()=>go("module",m)},T("quiz.practiseNow")+" ✏️")));
  },
  result(){
-  const {mod,set,right,qs,wrong} = current;
-  const pct = Math.round(right/qs.length*100);
+  const {mod,set,right,qs,wrong,skipped} = current;
+  const count = qs.length - skipped;   // reported or skipped questions count neither as right nor as wrong
+  if (!count){
+    app.append(h("div",{class:"card",style:"text-align:center"}, h("h2",null,"🚩 "+T("result.nothingCounted")),
+      h("div",{class:"row",style:"justify-content:center;margin-top:12px"}, h("button",{class:"btn sec",onclick:()=>go("module",mod)},T("nav.back")))));
+    return;
+  }
+  const pct = Math.round(right/count*100);
   const st = store.get(); const prev = st[set.id];
   st[set.id] = {best: Math.max(pct, prev?prev.best:0), runs:(prev?prev.runs:0)+1}; store.set(st);
-  Campus.result(set, right, qs.length, current.isRetry);
+  Campus.result(set, right, count, current.isRetry);
   const msg = pct===100?T("result.perfect")+" 🎉":pct>=80?T("result.great")+" 💪":pct>=50?T("result.good")+" 🙂":T("result.keepGoing")+" 🌱";
   app.append(h("div",{class:"card",style:"text-align:center"},
     h("div",{class:"stars"},stars(pct)), h("h2",null,msg),
-    h("p",null,T("result.score", {right, count: qs.length})+" ("+I18n.percent(pct/100)+")"),
+    h("p",null,T("result.score", {right, count})+" ("+I18n.percent(pct/100)+")"),
+    skipped ? h("p",{class:"small muted"},"🚩 "+T("result.notCounted", {count: skipped})) : null,
     h("div",{class:"row",style:"justify-content:center;margin-top:12px"},
       wrong.length ? h("button",{class:"btn",onclick:()=>runQuiz(mod,set,wrong.slice(),true)},"🔁 "+T("result.retryWrong", {count: wrong.length})) : null,
       h("button",{class:"btn sec",onclick:()=>startSet(mod,set)},T("result.again")),
@@ -178,34 +193,85 @@ const VIEWS = {
 };
 function stars(p){ const n = p>=90?3:p>=70?2:p>=40?1:0; return "★".repeat(n)+"☆".repeat(3-n); }
 function startSet(m,s){ const qs = s.qs(); runQuiz(m,s, s.noShuffle?qs:shuffle(qs), false); }
-function runQuiz(mod,set,qs,isRetry){ current={mod,set,qs,idx:0,right:0,wrong:[],isRetry}; showQ(); }
+function runQuiz(mod,set,qs,isRetry){ sendPending(); current={mod,set,qs,idx:0,right:0,wrong:[],skipped:0,pending:null,isRetry}; showQ(); }
+// the answer is stored when the learner goes on, not at once: a reported question must not count (ADR-0019)
+function sendPending(){
+  const c = current; if (!c || !c.pending) return;
+  const {q, ok} = c.pending; c.pending = null;
+  Campus.answer(c.mod, c.set, q, ok, c.isRetry);
+}
+addEventListener("pagehide", sendPending);
+// what the learner answered, read from the card (typed text, or the options marked wrong / chosen)
+function givenAnswer(card){
+  const mine = sel => [...card.querySelectorAll(sel)].filter(x=>!x.closest(".report"));   // not the report form itself
+  const typed = mine("input.txt").map(i=>i.value.trim()).filter(Boolean);
+  if (typed.length) return typed.join(" | ");
+  return mine(".opt.bad,.opt.sel,.tok.sel,.tok.bad").map(b=>b.textContent.trim()).join(" | ");
+}
 
 function showQ(){
   window.scrollTo(0,0); app.innerHTML="";
   const c = current, q = c.qs[c.idx];
   app.append(h("div",{class:"top"},
-    h("button",{class:"btn ghost",onclick:()=>{ if(confirmExit()) go("module",c.mod);}},"✕"),
+    h("button",{class:"btn ghost",onclick:()=>{ if(confirmExit()){ sendPending(); go("module",c.mod);} }},"✕"),
     h("div",{class:"bar"}, h("i",{style:`width:${c.idx/c.qs.length*100}%`})),
     h("span",{class:"small muted"},(c.idx+1)+"/"+c.qs.length)));
   const card = h("div",{class:"card"});
   if (c.isRetry) card.append(h("div",{class:"small muted",style:"margin-bottom:6px"},"🔁 "+T("quiz.retryRound")));
   app.append(card);
-  let finished = false;
+  let finished = false, result = null;   // result: {ok} once answered
+  const nextBtn = () => h("button",{class:"btn",onclick:next}, c.idx+1<c.qs.length?T("quiz.next")+" →":T("quiz.finish")+" 🏁");
+  // the question no longer counts: not right, not wrong, not stored
+  const uncount = () => {
+    if (result){ c.pending = null; if (result.ok) c.right--; else c.wrong.splice(c.wrong.indexOf(q),1); }
+    c.skipped++; finished = true;
+  };
+  if (Campus.flagged(c.set, q)) card.append(h("div",{class:"flagnote"}, h("span",null,"🚩 "+T("report.flagged")),
+    h("button",{class:"btn sec",onclick:()=>{ if (!result || c.pending) uncount(); next(); }},T("report.skip"))));
+  function openReport(){
+    if (card.querySelector(".report")) return;
+    let reason = null;
+    const send = h("button",{class:"btn",disabled:true,onclick:async()=>{
+      send.disabled = true;
+      const given = givenAnswer(card);
+      const sent = await Campus.report(c.set, q, {reason, note: note.value, given, ok: result ? result.ok : null, isRetry: c.isRetry});
+      if (!sent){ send.disabled = false; box.querySelector(".err").hidden = false; return; }
+      uncount();
+      box.replaceChildren(h("b",null,"🙏 "+T("report.thanks")), h("div",{class:"small",style:"margin-top:4px"},T("report.notCounted")),
+        h("div",{style:"margin-top:12px"}, nextBtn()));
+      card.querySelectorAll(".reportlink,.flagnote").forEach(x=>x.remove());
+      card.querySelectorAll("input,button.opt,button.tok,.fb .btn").forEach(x=>{ if (!box.contains(x)) x.disabled = true; });
+    }},T("report.send"));
+    const reasons = h("div",{class:"reasons"}, [["wrongSolution",T("report.wrongSolution")],["rightAnswer",T("report.rightAnswer")],["unclear",T("report.unclear")],["typo",T("report.typo")],["other",T("report.other")]].map(([r,label])=>{
+      const b = h("button",{class:"opt",type:"button",onclick:()=>{ reason = r; reasons.querySelectorAll(".opt").forEach(x=>x.classList.toggle("sel",x===b)); send.disabled = false; }},label);
+      return b; }));
+    const note = h("textarea",{maxlength:"1000",placeholder:T("report.notePlaceholder"),"aria-label":T("report.note")});
+    const box = h("div",{class:"report",role:"group","aria-label":T("report.title")},
+      h("b",null,"🚩 "+T("report.title")), h("div",{class:"small muted",style:"margin-top:4px"},T("report.hint")),
+      reasons, note, h("div",{class:"small err",style:"color:var(--bad);margin-top:6px",hidden:true},T("report.failed")),
+      h("div",{class:"row",style:"margin-top:10px;gap:10px"}, send, h("button",{class:"btn ghost",type:"button",onclick:()=>box.remove()},T("report.cancel"))));
+    card.append(box);
+    box.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
   TYPES[q.t](q, card, (ok, sol)=>{
-    if (finished) return; finished = true;
+    if (finished) return; finished = true; result = {ok};
     if (ok) c.right++; else c.wrong.push(q);
-    Campus.answer(c.mod, c.set, q, ok, c.isRetry);
+    c.pending = {q, ok};
+    card.querySelectorAll(":scope > .reportlink").forEach(x=>x.remove());   // the link moves into the feedback
     const fb = h("div",{class:"fb "+(ok?"ok":"bad")},
       h("b",null, ok?"✅ "+T("quiz.right"):"❌ "+T("quiz.notYet")),
       sol ? h("div",{html:sol,style:"margin-top:4px"}) : null,
       q.e ? h("div",{class:"small",style:"margin-top:6px",html:"💡 "+q.e}) : null,
-      h("div",{style:"margin-top:12px"}, h("button",{class:"btn",onclick:next}, c.idx+1<c.qs.length?T("quiz.next")+" →":T("quiz.finish")+" 🏁")));
-    card.append(fb);
+      h("div",{style:"margin-top:12px"}, nextBtn()),
+      h("div",{class:"reportlink"}, h("button",{class:"btn ghost",type:"button",onclick:openReport},"🚩 "+T("report.open"))));
+    const open = card.querySelector(".report"); card.insertBefore(fb, open);   // a report opened before answering stays below
     fb.scrollIntoView({behavior:"smooth",block:"nearest"});
   });
+  // before answering, too: a question that cannot be answered can be reported (and is then skipped)
+  card.append(h("div",{class:"reportlink"}, h("button",{class:"btn ghost small",type:"button",onclick:openReport},"🚩 "+T("report.open"))));
 }
 function confirmExit(){ return true; }
-function next(){ current.idx++; if (current.idx>=current.qs.length) go("result"); else showQ(); }
+function next(){ sendPending(); current.idx++; if (current.idx>=current.qs.length) go("result"); else showQ(); }
 
 /* ============================ Question types ============================ */
 // a row of keys that type a character into the input – for characters phone keyboards lack

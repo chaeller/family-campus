@@ -1,10 +1,12 @@
 {
  "unreleased": {
   "en": [
-   "In sorting questions the items come in a new order every time – the answers no longer follow a fixed pattern."
+   "Something wrong with a question? Tap 🚩 and tell us what – the question then does not count, and it is checked.",
+   "In sorting questions the items come in a new order every time – the answers can no longer be guessed."
   ],
   "de": [
-   "Bei Zuordnungsfragen kommen die Begriffe jedes Mal in neuer Reihenfolge – die Antworten folgen keinem festen Muster mehr."
+   "Stimmt bei einer Frage etwas nicht? Tippe auf 🚩 und sag, was – die Frage zählt dann nicht und wird geprüft.",
+   "Bei Zuordnungsfragen kommen die Begriffe jedes Mal in neuer Reihenfolge – die Antworten lassen sich nicht mehr erraten."
   ]
  },
  "versions": [

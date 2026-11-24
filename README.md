@@ -92,8 +92,8 @@ Details: [docs/getting-started.md](docs/getting-started.md).
 | [CHANGELOG.md](CHANGELOG.md) | Changes per version |
 
 Working with a coding agent (Claude Code): the skills in `.claude/skills/`
-(`/fc-ingest`, `/fc-improve`, `/fc-check`, `/fc-release`, `/fc-deploy`) guide
-new tiles, checks, releases and deployments of my-family; start Claude Code
+(`/fc-ingest`, `/fc-improve`, `/fc-feedback`, `/fc-check`, `/fc-release`, `/fc-deploy`)
+guide new tiles, reported questions, checks, releases and deployments of my-family; start Claude Code
 in the Family Campus folder (ADR-0014).
 
 ## Licence

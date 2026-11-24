@@ -63,6 +63,18 @@ updates roles and applies changed passwords; sessions of a person whose
 password changed are ended. `/fc-deploy` compares checksums of the local and
 the server's file (never the content) and offers to apply them.
 
+## Reported questions
+
+Learners report questions with 🚩 (ADR-0019); parents see them on the progress
+page. To process them on the development machine:
+
+```bash
+tools/campus-feedback.sh     # read-only: docker exec into $FC_CONTAINER on $FC_HOST → my-family/feedback.json
+```
+
+`/fc-feedback` fetches, analyses and fixes them and marks each one as handled in
+`feedback.json`. The flags end when the next release is installed.
+
 ## Backup
 
 ```bash

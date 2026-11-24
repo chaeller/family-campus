@@ -70,8 +70,8 @@ languages, architecture, operations) – keep them in step with the code.
 - Local test: `python3 tools/build.py && FC_PREFIX=/campus python3 server/server.py --www build/www --data <dir>`
   (logins of the example in `example-family/campus.env.example`).
 - `tools/new-campus.sh`, `campus-build.sh`, `campus-serve.sh`, `campus-image.sh`,
-  `check_de_ch.py` – create, build, run and image
-  my-family (default `my-family/`, see `tools/lib-campus.sh`; values
+  `campus-feedback.sh`, `check_de_ch.py` – create, build, run, image and fetch the reported
+  questions of my-family (default `my-family/`, see `tools/lib-campus.sh`; values
   from its `deploy.env`).
 - `.claude/skills/fc-*` – generic workflows for my-family (ADR-0014); Claude
   Code runs in the Family Campus folder, the skills take my-family's values from

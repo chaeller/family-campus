@@ -73,12 +73,14 @@ endpoints to look at another person.
 | `POST /api/logout` | Ends the session |
 | `GET /api/me` | Name, admin, `locale`, the people the user may see |
 | `POST /api/me/locale` `{locale}` | Stores the person's language (one of my-family's locales) |
-| `GET /api/progress?ex=<id>` | Best result and runs per set of one tile, due revision questions |
+| `GET /api/progress?ex=<id>` | Best result and runs per set of one tile, due revision questions, keys of the questions reported during the running release (`flags`) |
 | `GET /api/summary` | Per tile and set: runs, best, last; due and boxed questions; totals; mastered |
 | `GET /api/history?tz=<offset>` | Recent runs, recent wrong answers, answers per local day (30 days), today's answers |
 | `GET /api/repeat?ex=<id>` | Up to 15 due revision questions of a tile |
 | `POST /api/answer` `{ex, set, key, ok, mode, q, text}` | Stores one answer; wrong answers go into the revision box, right ones move up |
 | `POST /api/result` `{ex, set, total, correct, mode}` | Stores a finished set (modes `normal`, `retry`, `repeat`) |
+| `POST /api/report` `{ex, set, key, reason, note, given, ok, mode, q, text}` | Reports a question (ADR-0019); reasons `wrongSolution`, `rightAnswer`, `unclear`, `typo`, `other` |
+| `GET /api/reports` | Parents only: all reports with comments and whether they belong to the running release |
 | `GET /api/version` | Family Campus version and date, date of my-family's content, test build (public; from `build.json`, ADR-0018) |
 | `GET /healthz` | `ok` (public) |
 
@@ -92,6 +94,7 @@ endpoints to look at another person.
 | `answers` | every answer: tile, set, question key, question text, correct, mode, time |
 | `review` | revision box: question (JSON), box 1–5, due date (ADR-0006) |
 | `mastered` | questions that left the box |
+| `feedback` | reported questions: person, tile, set, question key, question as shown, answer given, rated right, reason, comment, release, time (ADR-0019) |
 
 The schema is created and migrated at start (new columns are added in
 place). Logins come from `/data/campus.env` at every start (ADR-0005).
@@ -100,6 +103,9 @@ place). Logins come from `/data/campus.env` at every start (ADR-0005).
 
 Tile → "learn first" (summary sheet) → set → questions one by one with
 feedback → result with "practise mistakes again". Every answer goes to
-`/api/answer`, every finished set to `/api/result` (ADR-0007). Revision
+`/api/answer` when the learner goes on (not at once), every finished set to
+`/api/result` (ADR-0007). A question reported with "🚩 Something wrong with
+this question?" is not sent and counts neither as right nor as wrong; while
+the same release runs it is flagged for everybody and can be skipped (ADR-0019). Revision
 questions are stored with their full content, because generated questions
 differ on every run.

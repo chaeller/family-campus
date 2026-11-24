@@ -49,10 +49,11 @@ sets: [
 | `match` | `q`, `pairs: [[left, right], …]` | Both sides must be unique |
 | `order` | `q`, `steps` (in the right order) | Tap the steps in order |
 | `tap` | `q`, `s` (sentence), `a` (words to tap, lower case) | Tap all words of a kind |
-| `sort` | `q`, `cats`, `items: [[text, cat], …]` | Assign every item to a category |
+| `sort` | `q`, `cats`, `items: [[text, cat], …]` | Assign every item to a category; items are shuffled, so they may be listed per category |
 
 Every question may have `e` (an explanation shown after answering). Texts
-may contain HTML.
+may contain HTML. Learners can report every question (🚩, ADR-0019); `/fc-feedback`
+processes the reports.
 
 ## Shared helpers of Family Campus
 

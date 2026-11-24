@@ -6,6 +6,19 @@ All notable changes to Family Campus are recorded here. The format follows
 
 ## Unreleased
 
+### Added
+
+- Learners can report a question (ADR-0019): "🚩 Something wrong with this question?" before
+  answering or in the feedback box, with a quick reason (wrong solution, my answer was right,
+  unclear, typo, something else) and an optional comment. A reported question counts neither as
+  right nor as wrong and does not go into the repetition box; while the same release runs it is
+  flagged for everybody and can be skipped. New table `feedback`, `POST /api/report`,
+  `GET /api/reports` (parents only), `flags` in `GET /api/progress`; the engine sends an answer
+  when the learner goes on instead of at once. Parents see the reports on the progress page.
+- `tools/campus-feedback.sh` fetches the reports read-only from the running container (or a local
+  database) into my-family's `feedback.json` (`tools/feedback_export.py`); the skill `fc-feedback`
+  analyses and fixes them and records how each was handled.
+
 ### Changed
 
 - `fc-release` detects changes in Family Campus (uncommitted, or commits after its tag) and prepares
