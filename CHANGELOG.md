@@ -27,6 +27,9 @@ All notable changes to Family Campus are recorded here. The format follows
 - `tools/publish_check.sh` ran the self test only when Playwright was installed, although
   `tools/selftest.py` needs only the `chromium` command – the self test was skipped. It now runs
   whenever `chromium` is found.
+- Sort questions (`t:"sort"`, tap a category per item) showed the items in the order the set listed
+  them – most sets list them per category, so the answers were always e.g. left, left, right, right.
+  The engine now shuffles the items every time the question is shown.
 
 ### Added
 

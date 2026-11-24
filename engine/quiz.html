@@ -388,10 +388,11 @@ const TYPES = {
  },
  sort(q, card, finish){
   card.append(h("div",{class:"q",html:q.q+'<span class="hint">'+T("quiz.sortHint")+'</span>'}));
-  const choice = new Array(q.items.length).fill(null);
+  const items = shuffle(q.items.slice()); // sets often list the items per category: never show them in that order
+  const choice = new Array(items.length).fill(null);
   const rows = h("div",{class:"sortlist"});
   const btn = h("button",{class:"btn",disabled:true,onclick:check},T("quiz.check"));
-  const rowEls = q.items.map(([w],i)=>{
+  const rowEls = items.map(([w],i)=>{
     const bs = q.cats.map(c=>h("button",{class:"opt sortbtn",onclick:()=>{ if(btn.dataset.done)return; choice[i]=c; bs.forEach(b=>b.classList.toggle("sel",b.textContent===c)); btn.disabled=choice.includes(null); }},c));
     const r = h("div",{class:"sortrow"}, h("div",{class:"sortword"},w), h("div",{class:"sortbtns"},bs));
     r._bs=bs; rows.append(r); return r;
@@ -399,7 +400,7 @@ const TYPES = {
   card.append(rows, h("div",{style:"margin-top:12px"},btn));
   function check(){
     btn.dataset.done="1"; btn.disabled=true; let wrong=[];
-    q.items.forEach(([w,cat],i)=>rowEls[i]._bs.forEach(b=>{ b.disabled=true;
+    items.forEach(([w,cat],i)=>rowEls[i]._bs.forEach(b=>{ b.disabled=true;
       if (b.textContent===cat) b.classList.add(choice[i]===cat?"ok":"done");
       else if (b.textContent===choice[i]){ b.classList.remove("sel"); b.classList.add("bad"); wrong.push(w+" → "+cat); } }));
     finish(wrong.length===0, wrong.length? T("quiz.wouldBe")+" <b>"+wrong.join(" · ")+"</b>" : "");

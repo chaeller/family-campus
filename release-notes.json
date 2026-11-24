@@ -1,5 +1,12 @@
 {
- "unreleased": {},
+ "unreleased": {
+  "en": [
+   "In sorting questions the items come in a new order every time – the answers no longer follow a fixed pattern."
+  ],
+  "de": [
+   "Bei Zuordnungsfragen kommen die Begriffe jedes Mal in neuer Reihenfolge – die Antworten folgen keinem festen Muster mehr."
+  ]
+ },
  "versions": [
   {
    "version": "1.0.1",
