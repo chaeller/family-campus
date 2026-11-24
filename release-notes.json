@@ -1,15 +1,20 @@
 {
- "unreleased": {
-  "en": [
-   "Something wrong with a question? Tap 🚩 and tell us what – the question then does not count, and it is checked.",
-   "In sorting questions the items come in a new order every time – the answers can no longer be guessed."
-  ],
-  "de": [
-   "Stimmt bei einer Frage etwas nicht? Tippe auf 🚩 und sag, was – die Frage zählt dann nicht und wird geprüft.",
-   "Bei Zuordnungsfragen kommen die Begriffe jedes Mal in neuer Reihenfolge – die Antworten lassen sich nicht mehr erraten."
-  ]
- },
+ "unreleased": {},
  "versions": [
+  {
+   "version": "1.1.0",
+   "date": "2026-11-24",
+   "notes": {
+    "en": [
+     "Something wrong with a question? Tap 🚩 and tell us what – the question then does not count, and it is checked.",
+     "In sorting questions the items come in a new order every time – the answers can no longer be guessed."
+    ],
+    "de": [
+     "Stimmt bei einer Frage etwas nicht? Tippe auf 🚩 und sag, was – die Frage zählt dann nicht und wird geprüft.",
+     "Bei Zuordnungsfragen kommen die Begriffe jedes Mal in neuer Reihenfolge – die Antworten lassen sich nicht mehr erraten."
+    ]
+   }
+  },
   {
    "version": "1.0.1",
    "date": "2026-11-23",

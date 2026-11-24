@@ -6,6 +6,8 @@ All notable changes to Family Campus are recorded here. The format follows
 
 ## Unreleased
 
+## 1.1.0 – 2026-11-24
+
 ### Added
 
 - Learners can report a question (ADR-0019): "🚩 Something wrong with this question?" before
@@ -18,6 +20,13 @@ All notable changes to Family Campus are recorded here. The format follows
 - `tools/campus-feedback.sh` fetches the reports read-only from the running container (or a local
   database) into my-family's `feedback.json` (`tools/feedback_export.py`); the skill `fc-feedback`
   analyses and fixes them and records how each was handled.
+- GitHub Actions workflow `checks` (`.github/workflows/checks.yml`): on every push and pull request
+  the server compiles, the i18n and de-CH checks run, the example family is built and every tile
+  passes the self test in headless Chromium (Google Chrome on the runner – its chromium snap
+  cannot read the test page in /tmp). The private word check stays local (`publish_check.sh`).
+- Dependabot (`.github/dependabot.yml`): monthly updates of the Docker base image and of the GitHub
+  Actions; Family Campus has no package dependencies.
+- CI: `actions/checkout` and `actions/setup-python` updated to v7 (Dependabot #1, #2).
 
 ### Changed
 
@@ -43,15 +52,6 @@ All notable changes to Family Campus are recorded here. The format follows
 - Sort questions (`t:"sort"`, tap a category per item) showed the items in the order the set listed
   them – most sets list them per category, so the answers were always e.g. left, left, right, right.
   The engine now shuffles the items every time the question is shown.
-
-### Added
-
-- GitHub Actions workflow `checks` (`.github/workflows/checks.yml`): on every push and pull request
-  the server compiles, the i18n and de-CH checks run, the example family is built and every tile
-  passes the self test in headless Chromium. The private word check stays local (`publish_check.sh`).
-- Dependabot (`.github/dependabot.yml`): monthly updates of the Docker base image and of the GitHub
-  Actions; Family Campus has no package dependencies.
-- CI: `actions/checkout` and `actions/setup-python` updated to v7 (Dependabot #1, #2).
 
 ## 1.0.1 – 2026-11-23
 
