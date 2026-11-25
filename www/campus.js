@@ -26,7 +26,7 @@
   const setIdOf = (set, q) => set.id === "__repeat" ? (q.__set || "?") : set.id;
   const keyFor = (set, q) => q.__key || keyOf(setIdOf(set, q), q);
   const modeOf = (set, isRetry) => set.id === "__repeat" ? "repeat" : isRetry ? "retry" : "normal";
-  const fromServer = sets => { const p = {}; for (const [k, v] of Object.entries(sets || {})) p[k] = { best: v.best, runs: v.runs }; return p; };
+  const fromServer = sets => { const p = {}; for (const [k, v] of Object.entries(sets || {})) p[k] = { best: v.best, runs: v.runs, full: v.full || 0 }; return p; };
 
   window.Campus = {
     ex,

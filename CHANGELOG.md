@@ -6,6 +6,15 @@ All notable changes to Family Campus are recorded here. The format follows
 
 ## Unreleased
 
+### Added
+
+- Difficulty of sets (ADR-0020): a set may carry `tier: 2, 3, …`; it is shown with a ◆◆ badge
+  and stays locked (🔒, greyed out) until every set of the next lower tier of the tile reached
+  80 % in a whole run – retry rounds and the repetition box do not count. The conditions are in
+  the badge's tooltip and appear below the set when it is tapped; the result of a run names the
+  sets it opened. `GET /api/progress` and `POST /api/result` return `full` (best result of whole
+  runs) per set; the self test checks `tier`; `fc-improve` and `fc-feedback` use it for harder sets.
+
 ### Changed
 
 - Reporting a question: typing a comment without picking a reason selects "Something else", so the

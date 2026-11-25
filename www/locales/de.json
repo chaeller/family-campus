@@ -220,6 +220,10 @@
  "report.failed": "Die Meldung konnte nicht gesendet werden. Bitte nochmals versuchen.",
  "report.flagged": "Diese Frage wurde gemeldet und wird geprüft. Du kannst sie überspringen.",
  "report.skip": "Überspringen",
+ "tier.name": "Schwierigkeit {n} von {max}",
+ "tier.needs": "frei ab {pct} in einem ganzen Durchgang von: {sets}",
+ "tier.open": "freigeschaltet ✓",
+ "tier.opened": "Neu freigeschaltet: {sets}",
  "subjects.languages": {
   "one": "{count} Sprache",
   "other": "{count} Sprachen"

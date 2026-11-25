@@ -55,6 +55,11 @@ Every question may have `e` (an explanation shown after answering). Texts
 may contain HTML. Learners can report every question (🚩, ADR-0019); `/fc-feedback`
 processes the reports.
 
+**Difficulty (ADR-0020):** a set may have `tier: 2` (3, 4 …) right after its title –
+`{id:"hj6", title:"Fallbeispiele", tier: 2, qs: () => […]}`. It is shown with ◆◆ and opens
+when every set of the next lower tier in the tile reached 80 % in a whole run. Use it for
+cases, decisions and exam-style questions; keep the basic sets (tier 1) short.
+
 ## Shared helpers of Family Campus
 
 `content/` holds helpers any tile can use by name; the build looks for a

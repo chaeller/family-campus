@@ -35,6 +35,12 @@ p{margin:.4em 0}
 .bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
 .exlist button{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:start;font:inherit;background:#faf9ff;border:2px solid var(--line);border-radius:14px;padding:14px;margin:8px 0;cursor:pointer;color:inherit}
 .exlist button:hover{border-color:var(--accent)}
+/* difficulty of a set (ADR-0020): ◆◆ badge, locked sets greyed out */
+.tier{display:inline-block;margin-inline-start:8px;padding:1px 8px;border-radius:99px;background:#efeafe;color:#4b36c9;font-size:.78rem;letter-spacing:1px;vertical-align:middle;white-space:nowrap}
+.exlist button.locked{opacity:.6;background:transparent;border-style:dashed}
+.exlist button.locked:hover{border-color:var(--line)}
+.tierup{font-weight:600;color:#2b8a3e}
+.lockinfo{margin:-4px 0 8px;padding:8px 12px;border-radius:12px;background:#fff4e6;color:#8a4b00;font-size:.9rem}
 .q{font-size:1.12rem;font-weight:600;margin-bottom:12px}
 .q .hint{display:block;font-weight:400;font-size:.92rem;color:var(--muted);margin-top:4px}
 .opts{display:grid;gap:10px}
@@ -154,10 +160,18 @@ const VIEWS = {
     h("button",{class:"btn sec",onclick:()=>go("learn",m)},T("quiz.openSheet")))));
   const l = h("div",{class:"card exlist"}, h("h2",null,"✏️ "+T("quiz.practise")));
   m.sets.forEach(s=>{
-    const r = st[s.id];
-    l.append(h("button",{onclick:()=>startSet(m,s)},
-      h("span",null,s.title),
-      h("span",{class:"small"}, r ? stars(r.best)+" "+I18n.percent(r.best/100)+" · "+I18n.number(r.runs)+"×" : T("tile.newShort"))));
+    const r = st[s.id], missing = lockedBy(m, s, st), why = tierText(m, s, missing);
+    const badge = tierOf(s) > 1 ? h("span",{class:"tier",title:why,"aria-label":why},"◆".repeat(tierOf(s))) : null;
+    let info = null;
+    const b = h("button",{class:missing.length?"locked":null,"aria-disabled":missing.length?"true":null,onclick:()=>{
+        if (!missing.length) return startSet(m,s);
+        // phones have no tooltip: a tap shows the conditions below the set
+        if (info){ info.remove(); info = null; return; }
+        info = h("div",{class:"lockinfo",role:"status"},"🔒 "+why); b.after(info);
+      }},
+      h("span",null,s.title, badge),
+      h("span",{class:"small"}, missing.length ? "🔒" : r ? stars(r.best)+" "+I18n.percent(r.best/100)+" · "+I18n.number(r.runs)+"×" : T("tile.newShort")));
+    l.append(b);
   });
   const rc = Campus.repeatCard(); if (rc) app.append(rc);
   app.append(l);
@@ -178,19 +192,41 @@ const VIEWS = {
   }
   const pct = Math.round(right/count*100);
   const st = store.get(); const prev = st[set.id];
-  st[set.id] = {best: Math.max(pct, prev?prev.best:0), runs:(prev?prev.runs:0)+1}; store.set(st);
+  const wasLocked = mod.sets.filter(x => lockedBy(mod, x, st).length);
+  st[set.id] = {best: Math.max(pct, prev?prev.best:0), runs:(prev?prev.runs:0)+1,
+                full: Math.max(current.isRetry || set.id==="__repeat" ? 0 : pct, prev&&prev.full||0)}; store.set(st);
+  const opened = wasLocked.filter(x => !lockedBy(mod, x, st).length);
   Campus.result(set, right, count, current.isRetry);
   const msg = pct===100?T("result.perfect")+" 🎉":pct>=80?T("result.great")+" 💪":pct>=50?T("result.good")+" 🙂":T("result.keepGoing")+" 🌱";
   app.append(h("div",{class:"card",style:"text-align:center"},
     h("div",{class:"stars"},stars(pct)), h("h2",null,msg),
     h("p",null,T("result.score", {right, count})+" ("+I18n.percent(pct/100)+")"),
     skipped ? h("p",{class:"small muted"},"🚩 "+T("result.notCounted", {count: skipped})) : null,
+    opened.length ? h("p",{class:"tierup"},"🔓 "+T("tier.opened", {sets: opened.map(x=>x.title).join(", ")})) : null,
     h("div",{class:"row",style:"justify-content:center;margin-top:12px"},
       wrong.length ? h("button",{class:"btn",onclick:()=>runQuiz(mod,set,wrong.slice(),true)},"🔁 "+T("result.retryWrong", {count: wrong.length})) : null,
       h("button",{class:"btn sec",onclick:()=>startSet(mod,set)},T("result.again")),
       h("button",{class:"btn sec",onclick:()=>go("module",mod)},T("nav.back")))));
  }
 };
+/* difficulty (ADR-0020): a set with tier n > 1 opens when every set of the next lower tier of the tile
+   has a best result of at least TIER_PASS percent */
+const TIER_PASS = 80;
+const tierOf = s => Math.max(1, parseInt(s.tier, 10) || 1);
+function lowerSets(m, s){
+  const below = m.sets.map(tierOf).filter(t => t < tierOf(s));
+  if (!below.length) return [];
+  const t = Math.max(...below);
+  return m.sets.filter(x => tierOf(x) === t);
+}
+// only whole runs count (st[id].full), not a retry round of the mistakes
+function lockedBy(m, s, st){ return lowerSets(m, s).filter(x => !(st[x.id] && st[x.id].full >= TIER_PASS)); }
+function tierText(m, s, missing){
+  const max = Math.max(...m.sets.map(tierOf)), head = T("tier.name", {n: tierOf(s), max});
+  const need = lowerSets(m, s);
+  if (!need.length) return head;
+  return head + " · " + (missing.length ? T("tier.needs", {pct: I18n.percent(TIER_PASS/100), sets: missing.map(x=>x.title).join(", ")}) : T("tier.open"));
+}
 function stars(p){ const n = p>=90?3:p>=70?2:p>=40?1:0; return "★".repeat(n)+"☆".repeat(3-n); }
 function startSet(m,s){ const qs = s.qs(); runQuiz(m,s, s.noShuffle?qs:shuffle(qs), false); }
 function runQuiz(mod,set,qs,isRetry){ sendPending(); current={mod,set,qs,idx:0,right:0,wrong:[],skipped:0,pending:null,isRetry}; showQ(); }

@@ -220,6 +220,10 @@
  "report.failed": "The report could not be sent. Please try again.",
  "report.flagged": "This question has been reported and is being checked. You can skip it.",
  "report.skip": "Skip",
+ "tier.name": "Difficulty {n} of {max}",
+ "tier.needs": "opens at {pct} in a whole run of: {sets}",
+ "tier.open": "unlocked ✓",
+ "tier.opened": "Unlocked: {sets}",
  "subjects.languages": {
   "one": "{count} language",
   "other": "{count} languages"

@@ -23,3 +23,4 @@ Fundamental decisions of Family Campus (ADR-0001). New ones use [0000-template.m
 | [0017](0017-focus-lists-per-person.md) | Hand-made focus lists per person | Accepted |
 | [0018](0018-one-version-dated-content.md) | One version – Family Campus; the content of my-family is dated | Accepted |
 | [0019](0019-reporting-questions.md) | Learners report questions; reported questions do not count | Accepted |
+| [0020](0020-set-difficulty-tiers.md) | Sets have a difficulty; harder sets open at 80 % | Accepted |

@@ -49,6 +49,7 @@ sheet names):
 | The solution or the question in the tile is wrong or unclear, a correct answer is not accepted (`rightAnswer`: add it to `a`), a typo | Fix the tile with **fc-improve**'s rules (steps 2–4: set ids stay, content language, `updated` + `note` in `tiles.json`) |
 | The engine rates or shows it wrongly (checking, typo tolerance, order, layout) | Fix Family Campus (engine, tools), with its `CHANGELOG.md` line and – if learners notice it – a note in `release-notes.json` |
 | The question is right; the learner was mistaken | No change. If the summary sheet could prevent the mistake, improve it (fc-improve) |
+| A wish for harder or more questions | A new set with a higher `tier` (ADR-0020) in that tile, with fc-improve's rules; ask first if it should cover more tiles |
 | Unclear what is meant, or the answer depends on material you do not have | Ask the user; leave `handled` empty |
 
 Generated questions: fix the generator, not the one instance; check a few

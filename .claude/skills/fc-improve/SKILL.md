@@ -47,6 +47,8 @@ set ab3 is wrong"). Without arguments ask which tile.
 - New sets: ids unique across all tiles; the set line must read
   `{id:"xx1", title:"…"`. **Existing set ids must not change** – progress is
   stored per set id (ADR-0005).
+- Harder questions (cases, decisions, sequences): a new set with `tier: 2` (or higher) after
+  its title – it opens when the sets of the tier below reach 80 % (ADR-0020).
 - Content language of the tile (`de-CH`: ss, never ß, also not in accepted
   answers, Swiss terms); `strict:true` where spelling is the learning goal.
   No names, classes, schools or photos of people in tiles.

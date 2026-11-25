@@ -73,7 +73,7 @@ endpoints to look at another person.
 | `POST /api/logout` | Ends the session |
 | `GET /api/me` | Name, admin, `locale`, the people the user may see |
 | `POST /api/me/locale` `{locale}` | Stores the person's language (one of my-family's locales) |
-| `GET /api/progress?ex=<id>` | Best result and runs per set of one tile, due revision questions, keys of the questions reported during the running release (`flags`) |
+| `GET /api/progress?ex=<id>` | Best result (`best`; of whole runs: `full`, ADR-0020) and runs per set of one tile, due revision questions, keys of the questions reported during the running release (`flags`) |
 | `GET /api/summary` | Per tile and set: runs, best, last; due and boxed questions; totals; mastered |
 | `GET /api/history?tz=<offset>` | Recent runs, recent wrong answers, answers per local day (30 days), today's answers |
 | `GET /api/repeat?ex=<id>` | Up to 15 due revision questions of a tile |

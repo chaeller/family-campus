@@ -13,6 +13,7 @@ go("module", MODULES[0]);
   for (const m of MODULES){
    go("learn",m);
    for (const s of m.sets){
+    if (s.tier !== undefined && !(Number.isInteger(s.tier) && s.tier >= 1)) probs.push(s.id+": tier must be a whole number from 1 (ADR-0020)");
     for (let run=0; run<6; run++){
      const qs=s.qs();
      runQuiz(m,s,qs,false);

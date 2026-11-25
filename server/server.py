@@ -381,9 +381,11 @@ class Handler(BaseHTTPRequestHandler):
         return self.json({"error": "not found"}, 404)
 
     def sets_progress(self, uid, ex):
-        rows = self.app.db.q("""SELECT set_id, COUNT(*) runs, MAX(100*correct/MAX(total,1)) best, MAX(ts) last
+        # full: best result of a whole run (no retry round of the mistakes) – it opens harder sets (ADR-0020)
+        rows = self.app.db.q("""SELECT set_id, COUNT(*) runs, MAX(100*correct/MAX(total,1)) best, MAX(ts) last,
+                                       MAX(CASE WHEN mode='normal' THEN 100*correct/MAX(total,1) END) best_full
                                 FROM attempts WHERE user_id=? AND exercise=? AND mode!='repeat' GROUP BY set_id""", (uid, ex))
-        return {r["set_id"]: {"runs": r["runs"], "best": r["best"], "last": r["last"]} for r in rows}
+        return {r["set_id"]: {"runs": r["runs"], "best": r["best"], "full": r["best_full"] or 0, "last": r["last"]} for r in rows}
 
     def due(self, uid, ex):
         return self.app.db.q("SELECT COUNT(*) n FROM review WHERE user_id=? AND exercise=? AND due<=?", (uid, ex, today().isoformat()))[0]["n"]
