@@ -1,5 +1,12 @@
 {
- "unreleased": {},
+ "unreleased": {
+  "en": [
+   "Reporting a question: if you only write a comment, “Something else” is chosen for you."
+  ],
+  "de": [
+   "Frage melden: Wenn du nur eine Bemerkung schreibst, wird «Etwas anderes» automatisch gewählt."
+  ]
+ },
  "versions": [
   {
    "version": "1.1.0",

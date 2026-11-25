@@ -6,6 +6,11 @@ All notable changes to Family Campus are recorded here. The format follows
 
 ## Unreleased
 
+### Changed
+
+- Reporting a question: typing a comment without picking a reason selects "Something else", so the
+  report can be sent; the reason can still be changed.
+
 ## 1.1.0 – 2026-11-24
 
 ### Added

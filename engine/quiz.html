@@ -243,9 +243,11 @@ function showQ(){
       card.querySelectorAll("input,button.opt,button.tok,.fb .btn").forEach(x=>{ if (!box.contains(x)) x.disabled = true; });
     }},T("report.send"));
     const reasons = h("div",{class:"reasons"}, [["wrongSolution",T("report.wrongSolution")],["rightAnswer",T("report.rightAnswer")],["unclear",T("report.unclear")],["typo",T("report.typo")],["other",T("report.other")]].map(([r,label])=>{
-      const b = h("button",{class:"opt",type:"button",onclick:()=>{ reason = r; reasons.querySelectorAll(".opt").forEach(x=>x.classList.toggle("sel",x===b)); send.disabled = false; }},label);
+      const b = h("button",{class:"opt",type:"button","data-reason":r,onclick:()=>{ reason = r; reasons.querySelectorAll(".opt").forEach(x=>x.classList.toggle("sel",x===b)); send.disabled = false; }},label);
       return b; }));
-    const note = h("textarea",{maxlength:"1000",placeholder:T("report.notePlaceholder"),"aria-label":T("report.note")});
+    // a comment without a reason: "something else" is chosen, so the report can be sent (and changed)
+    const note = h("textarea",{maxlength:"1000",placeholder:T("report.notePlaceholder"),"aria-label":T("report.note"),
+      oninput:()=>{ if (!reason && note.value.trim()) reasons.querySelector('[data-reason="other"]').click(); }});
     const box = h("div",{class:"report",role:"group","aria-label":T("report.title")},
       h("b",null,"🚩 "+T("report.title")), h("div",{class:"small muted",style:"margin-top:4px"},T("report.hint")),
       reasons, note, h("div",{class:"small err",style:"color:var(--bad);margin-top:6px",hidden:true},T("report.failed")),
