@@ -63,11 +63,15 @@ Set `handled` on every processed report in `feedback.json`:
 "handled": {"date": "YYYY-MM-DD", "outcome": "tile | engine | no-change", "what": "short description of the fix or the reason"}
 ```
 
-Then `tools/campus-build.sh` (self test, de-CH check) must pass.
+Then `tools/campus-build.sh` (self test, de-CH check) must pass. The build takes the
+handled reports into `build.json`; the release carrying them ends their flags (ADR-0019),
+so `feedback.json` is committed in my-family together with the fix. A report already
+fixed by an earlier change is `no-change` with that reason.
 
 ## 4. Report
 
 Per report: tile, question, reason, verdict and what changed. Say that the 🚩 flags
-on the live site disappear when the next release is installed (`fc-release`, then
-`fc-deploy`) – until then the reported questions stay flagged and can be skipped.
+of the handled reports disappear when the next release is installed (`fc-release`, then
+`fc-deploy`); reports not handled – or made after this fetch – stay flagged and can be
+skipped until a later release handles them.
 Do not commit, release or deploy.

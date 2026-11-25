@@ -105,7 +105,8 @@ Tile → "learn first" (summary sheet) → set → questions one by one with
 feedback → result with "practise mistakes again". Every answer goes to
 `/api/answer` when the learner goes on (not at once), every finished set to
 `/api/result` (ADR-0007). A question reported with "🚩 Something wrong with
-this question?" is not sent and counts neither as right nor as wrong; while
-the same release runs it is flagged for everybody and can be skipped (ADR-0019). Revision
+this question?" is not sent and counts neither as right nor as wrong; it is
+flagged for everybody and can be skipped until a release marks the report as
+handled (ADR-0019). Revision
 questions are stored with their full content, because generated questions
 differ on every run.

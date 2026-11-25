@@ -73,7 +73,9 @@ tools/campus-feedback.sh     # read-only: docker exec into $FC_CONTAINER on $FC_
 ```
 
 `/fc-feedback` fetches, analyses and fixes them and marks each one as handled in
-`feedback.json`. The flags end when the next release is installed.
+`feedback.json`. The build writes the handled reports into `build.json`; when that
+release is installed, their flags end (ADR-0019). Reports not handled yet – also
+those made after the last fetch – stay flagged, so a release can be made at any time.
 
 ## Backup
 

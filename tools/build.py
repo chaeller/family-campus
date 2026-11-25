@@ -14,9 +14,11 @@ my-family folder holds:
   tiles.json           optional: own tiles, same fields as content/catalog.json "tiles" ("module" a+b.js,
                        "extension", "css", "cover" – paths relative to tiles/; "date" when added, optional
                        "updated" and "note" when improved – they make up "What's new?")
+  feedback.json        optional: reported questions fetched by tools/campus-feedback.sh; those with "handled"
+                       end their flags with this build (ADR-0019)
 Output: pages, i18n, people.js (names and colours only – public for the login page), config.json (public),
 exercises.json (catalogue, people without colours, exams), locales merged Family Campus + my-family, tiles built,
-build.json (public: Family Campus version, date of the content, my-family commit, test build) and
+build.json (public: Family Campus version, date of the content, my-family commit, test build, handled reports as id@time) and
 release-notes.json ("What's new?": new and improved tiles plus the notes of Family Campus)."""
 import argparse, datetime, html, json, os, re, shutil, subprocess, sys
 
@@ -132,7 +134,12 @@ config["localeNames"] = {tag: catalog_of(tag).get("locale.name", tag) for tag in
 dump("config.json", config)
 # ---- version and "What's new?" (ADR-0018): one version – Family Campus's; my-family's content is dated
 vl = (open(os.path.join(APP, "VERSION"), encoding="utf-8").read().split() + ["", ""])[:2]
-dump("build.json", {"version": vl[0] or "dev", "date": vl[1], "content": a.content_date, "commit": a.commit, "dev": a.dev})
+# reports of my-family's feedback.json that fc-feedback handled: with this build their flags end (ADR-0019).
+# Only "id@time" goes into the public build.json – no names, no comments.
+feedback = load(os.path.join(inst_dir, "feedback.json"), {}) or {}
+resolved = sorted(f"{r['id']}@{r['ts']}" for r in feedback.get("reports", []) if r.get("handled"))
+dump("build.json", {"version": vl[0] or "dev", "date": vl[1], "content": a.content_date, "commit": a.commit, "dev": a.dev,
+                    "resolved": resolved})
 NEWS_DAYS, NEWS_MAX = 60, 12
 since = (datetime.date.fromisoformat(a.content_date) if a.content_date else datetime.date.today()) - datetime.timedelta(days=NEWS_DAYS)
 news = []
@@ -159,3 +166,9 @@ for f in sorted(os.listdir(os.path.join(inst_dir, "locales"))) if os.path.isdir(
 
 print(f"built {out}: {len(exercises)} tiles ({len(own_tiles)} own), {sum(len(e['sets']) for e in exercises)} sets, "
       f"{len(people)} people, locales {', '.join(inst.get('locales', ['en']))}")
+# reports fetched but not handled stay flagged in this release – a reminder, never an error (ADR-0019)
+if feedback:
+    open_reports = sum(1 for r in feedback.get("reports", []) if not r.get("handled"))
+    if open_reports:
+        print(f"note: feedback.json: {open_reports} report(s) not handled yet – they stay flagged (/fc-feedback); "
+              f"fetched {feedback.get('fetched', '?')[:16].replace('T', ' ')} UTC", file=sys.stderr)

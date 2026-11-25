@@ -17,6 +17,12 @@ All notable changes to Family Campus are recorded here. The format follows
 
 ### Changed
 
+- A 🚩 flag now ends with the release in which its report was handled, not with any next
+  release (ADR-0019): `tools/build.py` writes the handled reports of my-family's
+  `feedback.json` (`id@time` only) into `build.json`, the server flags every other report.
+  Reports not processed yet – or made after the last fetch – stay flagged across releases. The
+  parents' list shows the open reports and folds the handled ones away. The build prints a
+  note with the number of reports not handled yet; `fc-release` reports them without blocking; `fc-feedback`, ADR-0019 and the docs follow.
 - Reporting a question: typing a comment without picking a reason selects "Something else", so the
   report can be sent; the reason can still be changed.
 

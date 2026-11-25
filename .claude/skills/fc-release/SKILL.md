@@ -89,6 +89,10 @@ every version gets one; command in `docs/operations.md`). Only after a yes.
   tile's language or per locale ("Mehr Bilder", "Lösung in Set 3 korrigiert"; no
   names, no technical terms). Add what is missing; corrections nobody notices need
   no note. New exams alone need nothing.
+- Reported questions (ADR-0019): if `feedback.json` has reports without `handled`,
+  say how many – they stay flagged after this release, which is fine; offer
+  `/fc-feedback` first, never block the release. If `feedback.json` has changes that are
+  not committed, it goes into the commit (the release carries the handled reports).
 - Run `tools/campus-build.sh` and the checks of `fc-check` that matter for a
   release. Stop on a failing check.
 - The release will be named `<FC_APP_VERSION>-<date of the content>`; the date is

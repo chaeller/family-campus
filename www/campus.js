@@ -4,7 +4,7 @@
 (function () {
   const base = location.pathname.replace(/\/exercises\/[^/]+\/.*$/, "/").replace(/[^/]*$/, "");
   const ex = (location.pathname.match(/\/exercises\/([^/]+)\//) || [])[1] || "";
-  let progress = {}, due = 0, flags = new Set();   // flags: keys of questions reported during the running release (ADR-0019)
+  let progress = {}, due = 0, flags = new Set();   // flags: keys of questions with an open report (ADR-0019)
 
   async function api(path, body) {
     const r = await fetch(base + "api/" + path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), credentials: "same-origin", keepalive: true } : { credentials: "same-origin" });

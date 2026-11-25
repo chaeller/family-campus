@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS feedback (
   reason TEXT NOT NULL, note TEXT NOT NULL, question TEXT NOT NULL, qjson TEXT NOT NULL, given TEXT NOT NULL,
   ok INTEGER, mode TEXT NOT NULL, build TEXT NOT NULL, ts TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS feedback_build ON feedback(build, exercise);
+CREATE INDEX IF NOT EXISTS feedback_ex ON feedback(exercise);
 CREATE TABLE IF NOT EXISTS mastered (
   user_id INTEGER NOT NULL, exercise TEXT NOT NULL, qkey TEXT NOT NULL, ts TEXT NOT NULL,
   PRIMARY KEY (user_id, exercise, qkey));
@@ -154,9 +155,11 @@ class App:
         bj = os.path.join(self.www, "build.json")
         self.build = json.load(open(bj, encoding="utf-8")) if os.path.exists(bj) else {}
         self.build = {"version": VERSION, "date": RELEASE_DATE, "content": "", "dev": False, **self.build}
-        # the running release: a reported question is flagged only while this release runs (ADR-0019)
+        # the running release, stored with every report (ADR-0019)
         self.stamp = "{}-{}{}{}".format(self.build.get("version") or VERSION, self.build.get("content") or "",
                                         "@" + self.build["commit"] if self.build.get("commit") else "", "+dev" if self.build.get("dev") else "")
+        # reports handled on the development machine ("id@ts", from my-family's feedback.json): their flags end (ADR-0019)
+        self.resolved = set(self.build.get("resolved") or [])
         os.makedirs(data, exist_ok=True)
         self.db = DB(os.path.join(data, "campus.sqlite"))
         # campus logins: <data>/campus.env (in the Docker volume); environment variables take precedence
@@ -167,6 +170,9 @@ class App:
             print(f"note: {cred} is missing - nobody new can log in (see data/campus.env.example)", flush=True)
         env_users(self.db)
         self.fails = {}   # ip -> [count, until]
+
+    def is_resolved(self, r):
+        return f"{r['id']}@{r['ts']}" in self.resolved
 
     def locales(self):
         """Locales my-family offers (config.json, written by the build); English if there is none."""
@@ -341,12 +347,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/progress":
             ex = (qs.get("ex") or [""])[0]
             return self.json({"sets": self.sets_progress(t["id"], ex), "due": self.due(t["id"], ex), "flags": self.flags(ex)})
-        if path == "/api/reports":   # parents only: every report with its note (ADR-0019)
+        if path == "/api/reports":   # parents only: every report with its note; active = not resolved (ADR-0019)
             if not u["admin"]: return self.json({"error": "forbidden"}, 403)
             rows = db.q("""SELECT f.id, u.name user, f.exercise, f.set_id, f.reason, f.note, f.question, f.given, f.ok, f.mode,
                                   f.build, f.ts FROM feedback f JOIN users u ON u.id=f.user_id ORDER BY f.ts DESC LIMIT 300""")
             return self.json({"build": self.app.stamp,
-                              "reports": [dict(r, active=r["build"] == self.app.stamp) for r in rows]})
+                              "reports": [dict(r, active=not self.app.is_resolved(r)) for r in rows]})
         if path == "/api/summary":
             rows = db.q("""SELECT exercise, set_id, COUNT(*) runs, MAX(100*correct/MAX(total,1)) best, MAX(ts) last
                            FROM attempts WHERE user_id=? AND mode!='repeat' GROUP BY exercise, set_id""", (t["id"],))
@@ -391,13 +397,14 @@ class Handler(BaseHTTPRequestHandler):
         return self.app.db.q("SELECT COUNT(*) n FROM review WHERE user_id=? AND exercise=? AND due<=?", (uid, ex, today().isoformat()))[0]["n"]
 
     def flags(self, ex):
-        """Keys of the questions of a tile reported while the running release is live – flagged for everybody."""
-        return [r["qkey"] for r in self.app.db.q("SELECT DISTINCT qkey FROM feedback WHERE exercise=? AND build=?",
-                                                  (ex, self.app.stamp))]
+        """Keys of the questions of a tile with an open report – flagged for everybody until a release marks the
+        report as handled (ADR-0019)."""
+        return sorted({r["qkey"] for r in self.app.db.q("SELECT id, ts, qkey FROM feedback WHERE exercise=?", (ex,))
+                       if not self.app.is_resolved(r)})
 
     def report(self, u, d):
         """A learner reports a question (ADR-0019). The answer to it is not stored, so it counts neither as right
-        nor as wrong; the question is flagged for everybody until the next release."""
+        nor as wrong; the question is flagged for everybody until a release marks the report as handled."""
         try:
             ex, set_id, key = str(d["ex"])[:80], str(d["set"])[:40], str(d["key"])[:64]
             reason = str(d["reason"])

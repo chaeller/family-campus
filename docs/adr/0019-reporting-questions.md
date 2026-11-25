@@ -1,6 +1,6 @@
 # ADR-0019: Learners report questions; reported questions do not count
 
-- **Status:** Accepted
+- **Status:** Accepted (amended 2026-11-25: a flag ends with the release that handled its report)
 - **Date:** 2026-11-24
 
 ## Context
@@ -25,15 +25,25 @@ the mistake went into the repetition box (ADR-0006).
 - The server stores the report (table `feedback`): person, tile, set, question key,
   the question as shown, the answer given as read from the screen, whether it was
   rated right, reason, comment, and the running release (`version-content@commit`).
-- A question reported during the running release is flagged for everybody (🚩) and
-  can be skipped; skipping counts neither. The flag ends when another release is
-  installed – nothing on the live server has to be changed or cleared.
+- A reported question is flagged for everybody (🚩) and can be skipped; skipping
+  counts neither. The flag ends with the release in which the report was handled
+  (see below) – nothing on the live server has to be changed or cleared.
 - Only parents (admins) see the reports with their comments, in a section of the
-  progress page (`GET /api/reports`). Learners see only the flag.
+  progress page (`GET /api/reports`): the open reports, with the handled ones folded
+  away below. Learners see only the flag.
 - On the development machine `tools/campus-feedback.sh` fetches the reports
   read-only from the running container into my-family's `feedback.json`; the skill
   `fc-feedback` analyses them, fixes the tile or Family Campus, and records per
-  report how it was handled. The next release and deployment end the flags.
+  report how it was handled (`handled`).
+- `tools/build.py` writes the handled reports into `build.json` as `"resolved":
+  ["<id>@<time>", …]` – the database id plus the time of the report, so that a new
+  database with the same ids does not match; no names, no comments (`build.json` is
+  public). The server flags every report that is not resolved, whatever release it was
+  made in. `feedback.json` is committed in my-family with the fix, so the release
+  carries it.
+- A release does not need every report handled: reports not processed yet, or made
+  between the fetch and the deployment, stay flagged until a later release handles
+  them. `fc-release` says how many are open but does not block.
 
 ## Consequences
 
@@ -43,14 +53,19 @@ the mistake went into the repetition box (ADR-0006).
 - Flags match a question by its key (ADR-0006). Generated questions change on every
   run, so the flag shows only if exactly the same question comes again; the report
   itself is kept regardless.
-- `feedback.json` holds names and the learners' own words: it belongs to my-family.
+- `feedback.json` holds names and the learners' own words: it belongs to my-family,
+  and it must be committed there for a release to resolve reports.
+- `build.json` grows by one short string per handled report.
 
 ## Alternatives considered
 
 - **Store the answer at once and undo it on a report:** undoing a change of the
   repetition box needs the previous state; deferring is simpler and exact.
-- **Flags that a parent clears by hand:** needs writes on the live server and a
-  further screen; tying the flag to the release clears it exactly when the fix
-  arrives.
+- **Flags that a parent clears by hand, or a status written on the live server:**
+  needs writes on the live database and a further screen or command; the release
+  already carries the fix, so it carries the status too.
+- **End every flag with any new release** (the first version of this ADR, 1.1.0):
+  reports nobody had looked at yet – also those made between fetch and deployment –
+  lost their flag, and the parents' list kept every past report for good.
 - **Reports by e-mail or a chat message:** needs a mail setup and loses the
   question as shown.

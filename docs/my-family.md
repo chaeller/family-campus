@@ -131,7 +131,9 @@ See `example-family/curricula.md`.
 Written by `tools/campus-feedback.sh`: the questions learners reported on the
 live site (ADR-0019), with names and their comments – it stays in my-family.
 `/fc-feedback` adds `handled` (date, outcome, what was done) to each report it
-processed; the script keeps that field when it fetches again.
+processed; the script keeps that field when it fetches again. The build takes the
+handled reports (only `id@time`) into `build.json`: installing that release ends their
+flags (ADR-0019). Commit `feedback.json` with the fix, so the release carries it.
 
 ## What's new? and the version
 

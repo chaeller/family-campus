@@ -2,11 +2,13 @@
  "unreleased": {
   "en": [
    "Harder sets are marked ◆◆ and open once the easier sets of the tile reach 80 % – tap a locked set to see what is still missing.",
-   "Reporting a question: if you only write a comment, “Something else” is chosen for you."
+   "Reporting a question: if you only write a comment, “Something else” is chosen for you.",
+   "A reported question 🚩 stays flagged until the report has been looked at – a new version alone no longer clears it."
   ],
   "de": [
    "Schwierigere Sets sind mit ◆◆ markiert und öffnen sich, sobald die leichteren Sets der Kachel 80 % erreichen – tippe auf ein gesperrtes Set, um zu sehen, was noch fehlt.",
-   "Frage melden: Wenn du nur eine Bemerkung schreibst, wird «Etwas anderes» automatisch gewählt."
+   "Frage melden: Wenn du nur eine Bemerkung schreibst, wird «Etwas anderes» automatisch gewählt.",
+   "Eine gemeldete Frage 🚩 bleibt markiert, bis die Meldung bearbeitet ist – eine neue Version allein hebt die Markierung nicht mehr auf."
   ]
  },
  "versions": [
